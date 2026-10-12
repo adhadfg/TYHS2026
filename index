@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+  <title>2026 통고 수업용 사이트</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6fa;
+      color: #222;
+    }
+
+    header {
+      background: linear-gradient(135deg, #17243a, #344b70);
+      color: white;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    header h1 { margin: 0 0 12px; }
+    header p { color: #cbd5e1; }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 35px 20px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    #search {
+      flex: 1;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+
+    #refresh {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      background: #24292f;
+      color: white;
+      cursor: pointer;
+    }
+
+    .projects {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.05);
+      transition: transform .2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card h2 {
+      overflow-wrap: anywhere;
+    }
+
+    .card p {
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 11px 16px;
+      border-radius: 8px;
+      background: #238636;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    #status {
+      text-align: center;
+      color: #666;
+      margin: 25px 0;
+    }
+
+    footer {
+      text-align: center;
+      padding: 35px;
+      color: #888;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>🚀 My Projects</h1>
+  <p>수업용 웹사이트 모음</p>
+</header>
+
+<main>
+  <div class="toolbar">
+    <input
+      type="search"
+      id="search"
+      placeholder="🔎 프로젝트 검색..."
+    >
+    <button id="refresh">↻ 새로고침</button>
+  </div>
+
+  <p id="status">프로젝트를 불러오는 중...</p>
+  <div id="projects" class="projects"></div>
+</main>
+
+<footer>Powered by GitHub Pages</footer>
+
+<script>
+  // ★ 본인의 GitHub 정보로 변경하세요.
+  const USERNAME = "adhadfg";
+  const REPOSITORY = "TYHS2026";
+
+  const container = document.getElementById("projects");
+  const status = document.getElementById("status");
+  const search = document.getElementById("search");
+  const refresh = document.getElementById("refresh");
+
+  let projects = [];
+
+  // GitHub API에서 폴더 목록 가져오기
+  async function loadProjects() {
+    status.textContent = "프로젝트를 불러오는 중...";
+    refresh.disabled = true;
+
+    try {
+      const apiUrl =
+        `https://api.github.com/repos/${USERNAME}/${REPOSITORY}/contents/`;
+
+      const response = await fetch(apiUrl, {
+        cache: "no-store",
+        headers: {
+          Accept: "application/vnd.github+json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`GitHub API 오류: ${response.status}`);
+      }
+
+      const files = await response.json();
+
+      // 폴더만 선택
+      const folders = files.filter(
+        item => item.type === "dir"
+      );
+
+      // 폴더 안에 index.html이 있는지 확인
+      const results = await Promise.all(
+        folders.map(async folder => {
+          const checkUrl =
+            `https://api.github.com/repos/${USERNAME}/${REPOSITORY}/contents/` +
+            `${encodeURIComponent(folder.name)}/index.html`;
+
+          try {
+            const check = await fetch(checkUrl);
+            if (!check.ok) return null;
+
+            return {
+              name: folder.name,
+              url: folder.name + "/"
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      projects = results.filter(Boolean);
+      displayProjects();
+
+    } catch (error) {
+      console.error(error);
+      status.textContent =
+        "불러오기에 실패했습니다. GitHub 정보를 확인하세요.";
+    } finally {
+      refresh.disabled = false;
+    }
+  }
+
+  // 카드 생성
+  function displayProjects() {
+    container.replaceChildren();
+
+    const keyword = search.value.toLowerCase().trim();
+
+    const filtered = projects.filter(project =>
+      project.name.toLowerCase().includes(keyword)
+    );
+
+    status.textContent = filtered.length
+      ? `총 ${filtered.length}개의 프로젝트`
+      : "표시할 프로젝트가 없습니다.";
+
+    filtered.forEach(project => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("h2");
+      title.textContent = "📁 " + project.name;
+
+      const description = document.createElement("p");
+      description.textContent = "웹 프로젝트";
+
+      const link = document.createElement("a");
+      link.className = "btn";
+      link.href = project.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "🌐 사이트 열기 →";
+
+      card.append(title, description, link);
+      container.appendChild(card);
+    });
+  }
+
+  search.addEventListener("input", displayProjects);
+  refresh.addEventListener("click", loadProjects);
+
+  // 처음 접속할 때 자동 실행
+  loadProjects();
+</script>
+
+</body>
+</html>
