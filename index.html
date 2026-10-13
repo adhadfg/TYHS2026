@@ -194,8 +194,49 @@
         })
       );
 
-      projects = results.filter(Boolean);
-      displayProjects();
+
+const githubProjects = results.filter(Boolean);
+
+// Google AI Studio 프로젝트 목록 가져오기
+let aiProjects = [];
+
+try {
+  const response = await fetch(
+    "./projects.json",
+    { cache: "no-store" }
+  );
+
+  if (!response.ok) {
+    throw new Error("projects.json 파일을 찾을 수 없습니다.");
+  }
+
+  const data = await response.json();
+
+  aiProjects = data.projects
+    .filter(project => {
+      try {
+        const url = new URL(project.url);
+        return ["https:", "http:"].includes(url.protocol);
+      } catch {
+        return false;
+      }
+    })
+    .map(project => ({
+      name: project.name,
+      description: project.description,
+      url: project.url,
+      source: "Google AI Studio"
+    }));
+
+} catch (error) {
+  console.error("AI 프로젝트 불러오기 실패:", error);
+}
+
+// GitHub와 AI Studio 프로젝트 합치기
+projects = [...githubProjects, ...aiProjects];
+
+displayProjects();
+
 
     } catch (error) {
       console.error(error);
@@ -228,7 +269,11 @@
       title.textContent = "📁 " + project.name;
 
       const description = document.createElement("p");
-      description.textContent = "웹 프로젝트";
+description.textContent =
+  project.description ||
+  (project.source === "Google AI Studio"
+    ? "Google AI Studio 프로젝트"
+    : "GitHub 웹 프로젝트");
 
       const link = document.createElement("a");
       link.className = "btn";
