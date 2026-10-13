@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>피클볼 점수·서브 위치 학습 웹앱</title>
+  <style>
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { min-width: 0; overflow-wrap: anywhere; }
+    button { touch-action: manipulation; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+    input, select { font-size: 16px; max-width: 100%; min-width: 0; }
+    .container { padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
+    .tabs > *, .score-grid > *, .button-grid > *, .rule-grid > *, .serve-layout > *, .mode-grid > *, .serve-score > *, .team-form > *, .manual-grid > * { min-width: 0; }
+    .score-call { overflow-wrap: anywhere; }
+    .court { aspect-ratio: 1.35 / 1; }
+    .utility-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+    .utility-row button { padding: 10px 14px; border: 1px solid #bae6fd; border-radius: 12px; background: #e0f2fe; color: #0369a1; font-weight: 800; }
+    .app-status { min-height: 1.4em; color: #334155; font-size: 14px; }
+    @media (max-width: 400px) { .container { padding: 12px; } .card { padding: 14px; } .score-call { font-size: 38px; } .court .player { width: 34px; height: 34px; font-size: 12px; } .arrow-label { font-size: 11px; padding: 3px 6px; } }
+    @media (prefers-reduced-motion: reduce) { .player { transition: none !important; animation: none !important; } }
+    @media print { header, .tabs, .team-settings, .button-grid, .manual-panel, .mode-grid, .utility-row, .check-btn, .tiny-reset { display:none!important; } .tab-content { display:block!important; } .container { max-width:none; } .card, .rule-card { box-shadow:none; break-inside:avoid; page-break-inside:avoid; } .court { max-width:420px; } body { background:white; } }
+
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      background: #f4fbf7;
+      color: #1f2937;
+    }
+    header {
+      background: linear-gradient(135deg, #38bdf8, #22c55e);
+      color: white;
+      padding: 28px 18px;
+      text-align: center;
+    }
+    header h1 { margin: 0; font-size: 32px; }
+    header p { margin: 10px 0 0; font-size: 18px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 20px; }
+    .tabs, .mode-grid, .button-grid, .score-grid, .serve-score, .rule-grid {
+      display: grid;
+      gap: 10px;
+    }
+    .tabs { grid-template-columns: repeat(4, 1fr); margin-bottom: 20px; }
+    .score-grid, .serve-score { grid-template-columns: repeat(3, 1fr); }
+    .button-grid { grid-template-columns: repeat(4, 1fr); margin: 18px 0; }
+    .mode-grid { grid-template-columns: repeat(2, 1fr); margin-bottom: 14px; }
+    .rule-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    button {
+      font-family: inherit;
+    }
+    .tab-btn {
+      border: none;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    .tab-btn.active { background: #0284c7; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .team-settings {
+      background: white;
+      border-radius: 22px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    .team-settings h2 {
+      margin: 0 0 12px;
+      color: #0369a1;
+      font-size: 22px;
+    }
+    .team-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .team-form label {
+      display: block;
+      font-weight: 900;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .team-form input {
+      width: 100%;
+      border: 2px solid #bae6fd;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 17px;
+      font-weight: 800;
+    }
+    .apply-team-btn {
+      border: none;
+      border-radius: 14px;
+      padding: 13px 18px;
+      background: #0284c7;
+      color: white;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .preset-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .preset-row button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .card {
+      background: white;
+      border-radius: 22px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    .score-board { text-align: center; }
+    .score-call {
+      font-size: 64px;
+      font-weight: 900;
+      color: #0284c7;
+      margin: 14px 0;
+    }
+    .score-box, .mini {
+      background: #ecfdf5;
+      border: 2px solid #bbf7d0;
+      border-radius: 18px;
+      padding: 16px;
+      text-align: center;
+    }
+    .score-box h3, .mini h3 { margin: 0 0 8px; font-size: 16px; color: #047857; }
+    .score-box strong, .mini strong { font-size: 32px; }
+    button.action, .mode-btn, .check-btn {
+      border: none;
+      border-radius: 16px;
+      padding: 16px 12px;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      color: white;
+    }
+    .us { background: #22c55e; }
+    .them { background: #f97316; }
+    .sideout { background: #6366f1; }
+    .reset { background: #64748b; }
+    .mode-btn { background: #bae6fd; color: #0369a1; }
+    .mode-btn.active { background: #0284c7; color: white; }
+    .check-btn { background: #0284c7; margin-top: 10px; }
+    .notice {
+      background: #fef9c3;
+      border-left: 8px solid #facc15;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 18px;
+      line-height: 1.6;
+      text-align: left;
+    }
+    .small { color: #475569; font-size: 15px; line-height: 1.6; }
+    .serve-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .court {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      aspect-ratio: 1.35 / 1;
+      min-height: 210px;
+      background: #dbeafe;
+      border: 6px solid #1e40af;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .net {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: #111827;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+    .kitchen {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 15%;
+      background: rgba(251, 191, 36, 0.45);
+      border-top: 3px solid #1e40af;
+      border-bottom: 3px solid #1e40af;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #854d0e;
+    }
+    .kitchen.top { top: 35%; }
+    .kitchen.bottom { top: 50%; }
+    .center-line {
+      position: absolute;
+      left: 50%;
+      width: 3px;
+      background: #1e40af;
+      transform: translateX(-50%);
+    }
+    .center-line.top { top: 0; height: 35%; }
+    .center-line.bottom { top: 65%; height: 35%; }
+    .box small {
+      font-size: 12px;
+      color: #475569;
+      font-weight: 800;
+    }
+    .court-label-top{
+      position:absolute;
+      top:6px;
+      left:50%;
+      transform:translateX(-50%);
+      font-weight:900;
+      color:#0f172a;
+      z-index:3;
+    }
+    .court-label-bottom{
+      position:absolute;
+      bottom:6px;
+      left:50%;
+      transform:translateX(-50%);
+      font-weight:900;
+      color:#0f172a;
+      z-index:3;
+    }
+    .box {
+      position: absolute;
+      width: 50%;
+      height: 35%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-weight: 900;
+      color: #0f172a;
+      padding: 8px;
+      border: 2px solid rgba(30,64,175,0.25);
+    }
+    .top-left { top: 0; left: 0; }
+    .top-right { top: 0; right: 0; }
+    .bottom-left { bottom: 0; left: 0; }
+    .bottom-right { bottom: 0; right: 0; }
+    .active-serve { background: rgba(34, 197, 94, 0.55); outline: 5px solid #16a34a; z-index: 1; }
+    .active-receive { background: transparent; outline: none; z-index: 1; }
+    .player {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: white;
+      font-weight: 900;
+      z-index: 5;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      transition: left 0.75s ease, top 0.75s ease, bottom 0.75s ease, transform 0.75s ease, background 0.3s ease;
+    }
+    /* 선수 색깔은 상황에 따라 바꾸지 않고 A/B/C/D마다 고정합니다. */
+    .player-a { background: #0369a1; }
+    .player-b { background: #16a34a; }
+    .player-c { background: #9333ea; }
+    .player-d { background: #f97316; }
+
+    /* 서버/리시버 표시는 색 변경이 아니라 테두리와 배지로만 구분합니다. */
+    .server-player { outline: 5px solid #facc15; box-shadow: 0 0 0 8px rgba(250, 204, 21, .28), 0 4px 10px rgba(0,0,0,0.25); }
+    .receiver-player { outline: 4px dashed rgba(15, 23, 42, .45); }
+    .moving {
+      animation: playerBounce 0.75s ease;
+    }
+    @keyframes playerBounce {
+      0% { transform: translateX(-50%) scale(1); }
+      35% { transform: translateX(-50%) scale(1.22); }
+      70% { transform: translateX(-50%) scale(0.95); }
+      100% { transform: translateX(-50%) scale(1); }
+    }
+    .p-bottom { bottom: 16%; }
+    .p-top { top: 16%; }
+    .p-left { left: 25%; transform: translateX(-50%); }
+    .p-right { left: 75%; transform: translateX(-50%); }
+    .arrow {
+      position: absolute;
+      height: 10px;
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+      transform-origin: left center;
+      z-index: 4;
+      border-radius: 999px;
+      box-shadow: 0 3px 8px rgba(220, 38, 38, 0.35);
+      opacity: 0.95;
+    }
+    .arrow::after {
+      content: "";
+      position: absolute;
+      right: -3px;
+      top: -11px;
+      border-left: 26px solid #dc2626;
+      border-top: 16px solid transparent;
+      border-bottom: 16px solid transparent;
+    }
+    .arrow-label {
+      position: absolute;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 13px;
+      font-weight: 900;
+      z-index: 6;
+      pointer-events: none;
+    }
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .legend span {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .rule-card {
+      background: #ffffff;
+      border-left: 8px solid #22c55e;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    }
+    .rule-card h3 { margin-top: 0; color: #047857; }
+    .rule-card p { line-height: 1.6; margin-bottom: 0; }
+    .quiz-option {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 14px;
+      border: 2px solid #bae6fd;
+      background: #f0f9ff;
+      border-radius: 14px;
+      font-size: 17px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .quiz-option.selected { background: #0284c7; color: white; border-color: #0284c7; }
+    .feedback { margin-top: 14px; font-size: 17px; font-weight: 700; line-height: 1.6; }
+    .tiny-reset {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #e2e8f0;
+      color: #334155;
+      margin-top: 8px;
+    }
+    .winner-banner {
+      display: none;
+      background: #dcfce7;
+      border: 3px solid #22c55e;
+      color: #166534;
+      border-radius: 18px;
+      padding: 16px;
+      margin: 14px 0;
+      font-size: 20px;
+      font-weight: 900;
+      text-align: center;
+    }
+    .winner-banner.show { display: block; }
+    .manual-panel {
+      background: #f8fafc;
+      border: 2px solid #cbd5e1;
+      border-radius: 18px;
+      padding: 16px;
+      margin-top: 16px;
+      text-align: left;
+    }
+    .manual-panel h3 {
+      margin: 0 0 12px;
+      color: #334155;
+    }
+    .manual-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+    .manual-item {
+      background: white;
+      border-radius: 14px;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .manual-item label {
+      display: block;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: #475569;
+    }
+    .stepper {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .stepper button, .manual-panel select {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor: pointer;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    .stepper strong {
+      min-width: 32px;
+      text-align: center;
+      font-size: 22px;
+    }
+    .manual-panel select {
+      width: 100%;
+      font-size: 16px;
+      border: 2px solid #bae6fd;
+      background: white;
+    }
+    @supports not (aspect-ratio: 1 / 1) { .court { height: 320px; } }
+    @media (max-width: 780px) {
+      header h1 { font-size: 25px; }
+      .tabs, .score-grid, .button-grid, .rule-grid, .serve-layout, .mode-grid, .serve-score, .team-form, .manual-grid { grid-template-columns: 1fr; }
+      .score-call { font-size: 46px; }
+      .tab-btn { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>피클볼 점수·서브 위치 학습 보조도구</h1>
+    <p>복식에서는 1번 서버가 실패하면 파트너가 2번 서버가 되는 흐름까지 학습합니다.</p>
+  </header>
+
+  <main class="container">
+    <section class="team-settings">
+      <h2>팀 이름 설정</h2>
+      <div class="team-form">
+        <div>
+          <label for="usTeamInput">아래쪽 팀 이름</label>
+          <input id="usTeamInput" type="text" value="우리 팀" maxlength="12" />
+        </div>
+        <div>
+          <label for="themTeamInput">위쪽 팀 이름</label>
+          <input id="themTeamInput" type="text" value="상대 팀" maxlength="12" />
+        </div>
+        <button class="apply-team-btn" onclick="applyTeamNames()">적용</button>
+      </div>
+      <div class="preset-row">
+        <button onclick="setTeamPreset('청팀', '백팀')">청팀 vs 백팀</button>
+        <button onclick="setTeamPreset('1반', '2반')">1반 vs 2반</button>
+        <button onclick="setTeamPreset('A조', 'B조')">A조 vs B조</button>
+        <button onclick="setTeamPreset('드래곤', '타이거')">드래곤 vs 타이거</button>
+      
+      <div class="preset-row" style="margin-top:14px;">
+        <input aria-label="A 선수 이름" id="playerAInput" type="text" value="A" placeholder="아래쪽 선수1" style="padding:8px;border:2px solid #bae6fd;border-radius:10px;">
+        <input aria-label="B 선수 이름" id="playerBInput" type="text" value="B" placeholder="아래쪽 선수2" style="padding:8px;border:2px solid #bae6fd;border-radius:10px;">
+        <input aria-label="C 선수 이름" id="playerCInput" type="text" value="C" placeholder="위쪽 선수1" style="padding:8px;border:2px solid #bae6fd;border-radius:10px;">
+        <input aria-label="D 선수 이름" id="playerDInput" type="text" value="D" placeholder="위쪽 선수2" style="padding:8px;border:2px solid #bae6fd;border-radius:10px;">
+      </div>
+
+    </div>
+    </section>
+
+    <div class="utility-row" aria-label="학습 기록 보관">
+      <button type="button" id="exportBtn">기록 TXT 저장</button>
+      <button type="button" id="shareBtn">기록 공유</button>
+      <button type="button" id="copyBtn">기록 복사</button>
+      <button type="button" id="printBtn">인쇄 / PDF 저장</button>
+      <button type="button" id="clearSavedBtn">저장 기록 삭제</button>
+    </div>
+    <p id="appStatus" class="app-status" role="status" aria-live="polite"></p>
+    <nav class="tabs" aria-label="학습 화면">
+      <button class="tab-btn active" onclick="openTab('score', this)">점수 학습</button>
+      <button class="tab-btn" onclick="openTab('serve', this)">서브 위치</button>
+      <button class="tab-btn" onclick="openTab('quiz', this)">연습 문제</button>
+      <button class="tab-btn" onclick="openTab('rules', this)">규칙</button>
+    </nav>
+
+    <section id="score" class="tab-content active">
+      <div class="card score-board">
+        <h2>현재 점수 콜</h2>
+        <div class="score-call" id="scoreCall">0-0-2</div>
+
+        <div class="score-grid">
+          <div class="score-box"><h3 id="usScoreLabel">우리 팀 점수</h3><strong id="usScore">0</strong></div>
+          <div class="score-box"><h3 id="themScoreLabel">상대 팀 점수</h3><strong id="themScore">0</strong></div>
+          <div class="score-box"><h3>서버 번호</h3><strong id="serverNumber">2</strong></div>
+        </div>
+
+        <div class="winner-banner" id="winnerBanner" role="status" aria-live="polite"></div>
+        <div class="notice" id="explanation"></div>
+
+        <div class="button-grid">
+          <button class="action us" id="usScoreBtn" onclick="rallyWin('us')">우리 팀 득점</button>
+          <button class="action them" id="themScoreBtn" onclick="rallyWin('them')">상대 팀 득점</button>
+          <button class="action reset" onclick="resetGame()">초기화</button>
+        </div>
+        <div class="manual-panel">
+          <h3>모의 경기용 수동 조정</h3>
+          <div class="manual-grid">
+            <div class="manual-item">
+              <label id="manualUsLabel">우리 팀 점수</label>
+              <div class="stepper">
+                <button onclick="adjustScore('us', -1)">-</button>
+                <strong id="manualUsScore">0</strong>
+                <button onclick="adjustScore('us', 1)">+</button>
+              </div>
+            </div>
+            <div class="manual-item">
+              <label id="manualThemLabel">상대 팀 점수</label>
+              <div class="stepper">
+                <button onclick="adjustScore('them', -1)">-</button>
+                <strong id="manualThemScore">0</strong>
+                <button onclick="adjustScore('them', 1)">+</button>
+              </div>
+            </div>
+            <div class="manual-item">
+              <label>서브 팀</label>
+              <select id="manualServingTeam" onchange="setServingTeamManual(this.value)">
+                <option value="us">우리 팀</option>
+                <option value="them">상대 팀</option>
+              </select>
+            </div>
+            <div class="manual-item">
+              <label>서버 번호</label>
+              <select id="manualServerNumber" onchange="setServerNumberManual(this.value)">
+                <option value="1">1번 서버</option>
+                <option value="2">2번 서버</option>
+              </select>
+            </div>
+          </div>
+          <p class="small">점수를 잘못 눌렀을 때 여기서 직접 수정하세요. 11점에 도달하면 승리로 판정됩니다.</p>
+        </div>
+
+        
+      </div>
+    </section>
+
+    <section id="serve" class="tab-content">
+      <div class="card">
+        <h2>서브 위치 직접 학습</h2>
+        <div class="mode-grid">
+          <button class="mode-btn active" id="doublesBtn" onclick="setServeMode('doubles')">복식으로 연습</button>
+          <button class="mode-btn" id="singlesBtn" onclick="setServeMode('singles')">단식으로 연습</button>
+        </div>
+
+        <div class="serve-score">
+          <div class="mini"><h3 id="serveUsScoreLabel">우리 팀 점수</h3><strong id="serveUsScore">0</strong></div>
+          <div class="mini"><h3 id="serveThemScoreLabel">상대 팀 점수</h3><strong id="serveThemScore">0</strong></div>
+          <div class="mini"><h3 id="thirdLabel">서버 번호</h3><strong id="serveServerNumber">2</strong></div>
+        </div>
+
+        <div class="winner-banner" id="serveWinnerBanner" role="status" aria-live="polite"></div>
+        <div class="button-grid">
+          <button class="action us" id="usRallyBtn" onclick="serveRallyWin('us')">우리 팀 랠리 승리</button>
+          <button class="action them" id="themRallyBtn" onclick="serveRallyWin('them')">상대 팀 랠리 승리</button>
+          <button class="action reset" onclick="serveReset()">초기화</button>
+        </div>
+        
+
+
+        <div class="manual-panel">
+          <h3>서브 위치 수동 조정</h3>
+          <div class="manual-grid">
+            <div class="manual-item">
+              <label id="serveManualUsLabel">우리 팀 점수</label>
+              <div class="stepper">
+                <button onclick="adjustScore('us', -1)">-</button>
+                <strong id="serveManualUsScore">0</strong>
+                <button onclick="adjustScore('us', 1)">+</button>
+              </div>
+            </div>
+            <div class="manual-item">
+              <label id="serveManualThemLabel">상대 팀 점수</label>
+              <div class="stepper">
+                <button onclick="adjustScore('them', -1)">-</button>
+                <strong id="serveManualThemScore">0</strong>
+                <button onclick="adjustScore('them', 1)">+</button>
+              </div>
+            </div>
+            <div class="manual-item">
+              <label>서브 팀</label>
+              <select id="serveManualServingTeam" onchange="setServingTeamManual(this.value)">
+                <option value="us">우리 팀</option>
+                <option value="them">상대 팀</option>
+              </select>
+            </div>
+            <div class="manual-item">
+              <label>서버 번호</label>
+              <select id="serveManualServerNumber" onchange="setServerNumberManual(this.value)">
+                <option value="1">1번 서버</option>
+                <option value="2">2번 서버</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="serve-layout">
+          <div>
+            <div class="court" id="court">
+              <div class="box top-left" id="topLeft"><div class="court-label-top"><span id="topLeftLabel">상대 오른쪽</span><br><small>(상대 기준)</small></div></div>
+              <div class="box top-right" id="topRight"><div class="court-label-top"><span id="topRightLabel">상대 왼쪽</span><br><small>(상대 기준)</small></div></div>
+              <div class="kitchen top">키친</div>
+              <div class="net"></div>
+              <div class="kitchen bottom">키친</div>
+              <div class="box bottom-left" id="bottomLeft"><div class="court-label-bottom"><span id="bottomLeftLabel">우리 왼쪽</span></div></div>
+              <div class="box bottom-right" id="bottomRight"><div class="court-label-bottom"><span id="bottomRightLabel">우리 오른쪽</span></div></div>
+              <div class="center-line top"></div>
+              <div class="center-line bottom"></div>
+
+              <div class="player team-us" id="playerA"><span id="labelA">A</span></div>
+              <div class="player team-us" id="playerB"><span id="labelB">B</span></div>
+              <div class="player team-them" id="playerC"><span id="labelC">C</span></div>
+              <div class="player team-them" id="playerD"><span id="labelD">D</span></div>
+
+              <div class="arrow" id="serveArrow"></div>
+              <div class="arrow-label" id="arrowLabel">서브 방향</div>
+            </div>
+
+            <div class="legend">
+              <span>A/B/C/D: 각자 고정 색</span>
+              <span>노란 테두리: 서버</span>
+              <span>점선 테두리: 리시버</span>
+              <span>초록 영역: 서브 위치</span>
+            </div>
+          </div>
+
+          <div class="serve-info">
+            <h3 id="serveTitle">복식 서브 위치</h3>
+            <div class="notice" id="serveExplanation"></div>
+
+            <div class="card" style="box-shadow:none; background:#f8fafc; margin-top:14px;">
+              <h3>방금 변화 설명</h3>
+              <p id="serveChangeLog" class="small"></p>
+            </div>
+
+            <div class="card" style="box-shadow:none; background:#f8fafc; margin-top:14px;">
+              <h3>핵심 기억법</h3>
+              <p id="serveTip" class="small"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="quiz" class="tab-content">
+      <div class="card">
+        <h2>연습 문제</h2>
+        <div class="mode-grid">
+          <button class="mode-btn active" id="scoreQuizBtn" onclick="setQuizMode('score')">점수 학습 문제 10개</button>
+          <button class="mode-btn" id="serveQuizBtn" onclick="setQuizMode('serve')">서브 위치 문제 10개</button>
+        </div>
+        <div id="quizBox" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="rules" class="tab-content">
+      <div class="rule-grid">
+        <div class="rule-card"><h3>1. 점수 부르는 법</h3><p>복식은 서브 팀 점수-리시브 팀 점수-서버 번호 순서로 말합니다. 예: 3-2-1</p></div>
+        <div class="rule-card"><h3>2. 1번 서버와 2번 서버</h3><p>복식에서 1번 서버가 랠리를 잃으면 같은 팀 파트너가 2번 서버가 됩니다. 2번 서버도 잃으면 사이드 아웃입니다.</p></div>
+        <div class="rule-card"><h3>3. 득점 시 위치 변화</h3><p>서브 팀이 득점하면 같은 서버가 계속 서브하고, 서브 팀 두 선수만 좌우 위치를 바꿉니다.</p></div>
+        <div class="rule-card"><h3>4. 리시브 팀 위치</h3><p>서브 팀이 득점해서 위치를 바꿀 때 리시브 팀 선수들은 자리를 바꾸지 않습니다.</p></div>
+        <div class="rule-card"><h3>5. 단식 서브 위치</h3><p>단식은 서버 점수가 짝수면 오른쪽, 홀수면 왼쪽에서 대각선으로 서브합니다.</p></div>
+        <div class="rule-card"><h3>6. 더블 바운스 규칙</h3><p>서브 후 리시브 팀과 서브 팀은 각각 한 번씩 공을 튀긴 뒤 쳐야 합니다. 그 다음부터 발리가 가능합니다.</p></div>
+        <div class="rule-card"><h3>7. 논발리존, 키친</h3><p>키친 안에서는 공이 공중에 떠 있을 때 바로 치는 발리를 할 수 없습니다. 공이 튄 뒤에는 들어가서 칠 수 있습니다.</p></div>
+        <div class="rule-card"><h3>8. 서브 방향</h3><p>서브는 항상 서버 위치에서 화면 기준 대각선 반대편 서비스 코트로 넣습니다. 화면 위 상대 코트는 상대가 바라보는 기준이므로 화면 왼쪽이 상대 오른쪽입니다.</p></div>
+        <div class="rule-card"><h3>9. 11점 승리</h3><p>수업용 연습에서는 일반적인 방식처럼 먼저 11점에 도달한 팀을 승리로 판정합니다.</p></div>
+        <div class="rule-card"><h3>10. 선수 색 고정</h3><p>A, B, C, D 선수의 색은 상황에 따라 바뀌지 않습니다. 서버는 노란 테두리, 리시버는 점선 테두리로만 표시합니다.</p></div>
+        <div class="rule-card"><h3>11. 단식 리시브 위치</h3><p>단식에서는 서버 점수가 짝수면 오른쪽에서 상대의 대각선 서비스 코트로, 홀수면 왼쪽에서 상대의 대각선 서비스 코트로 서브합니다.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+    const STORAGE_KEY = "pickleball-learning-app-v1";
+    let storageEnabled = true;
+    let restoring = false;
+    let statusTimer = null;
+    function appStatus(message) {
+      const el = document.getElementById("appStatus");
+      if (el) el.textContent = message;
+    }
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+    }
+    function safeText(value, fallback, limit) {
+      return typeof value === "string" ? (value.trim().slice(0, limit) || fallback) : fallback;
+    }
+    function saveState() {
+      if (restoring || !storageEnabled) return;
+      const record = {usScore, themScore, servingTeam, serverNumber, serveMode,
+        teamNames, playerNames, players, currentServer, currentReceiver,
+        lastMessage, serveChangeLog, gameOver, winnerTeam, quizMode, currentQuiz};
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(record)); }
+      catch (err) { storageEnabled = false; appStatus("자동 저장을 사용할 수 없습니다. '기록 TXT 저장' 또는 '기록 복사'로 보관해 주세요."); }
+    }
+    function restoreState() {
+      let raw;
+      try { raw = localStorage.getItem(STORAGE_KEY); }
+      catch (err) { storageEnabled = false; appStatus("이 브라우저에서 자동 저장이 제한됩니다. 기록 파일 또는 복사 기능을 이용해 주세요."); return false; }
+      if (!raw) return false;
+      try {
+        const r = JSON.parse(raw);
+        const isScore = n => Number.isInteger(n) && n >= 0 && n <= MAX_SCORE;
+        const validTeam = t => t === "us" || t === "them";
+        const validPlayer = p => ["A","B","C","D"].indexOf(p) !== -1;
+        if (!r || !isScore(r.usScore) || !isScore(r.themScore) || !validTeam(r.servingTeam) ||
+          (r.serverNumber !== 1 && r.serverNumber !== 2) ||
+          ["singles","doubles"].indexOf(r.serveMode) === -1 ||
+          !r.teamNames || !r.playerNames || !r.players || !validPlayer(r.currentServer) || !validPlayer(r.currentReceiver) ||
+          !["score","serve"].includes(r.quizMode) || !Number.isInteger(r.currentQuiz) || r.currentQuiz < 0 || r.currentQuiz >= 10 ||
+          !["A","B","C","D"].every(p => r.players[p] && ["left","right"].includes(r.players[p].side) &&
+            r.players[p].team === (p === "A" || p === "B" ? "us" : "them"))) throw Error("invalid saved data");
+        restoring = true;
+        usScore = r.usScore; themScore = r.themScore; servingTeam = r.servingTeam;
+        serverNumber = r.serverNumber; serveMode = r.serveMode;
+        teamNames = {us:safeText(r.teamNames.us,"우리 팀",12),them:safeText(r.teamNames.them,"상대 팀",12)};
+        playerNames = Object.fromEntries(["A","B","C","D"].map(p => [p,safeText(r.playerNames[p],p,30)]));
+        players = r.players; currentServer = r.currentServer; currentReceiver = r.currentReceiver;
+        lastMessage = safeText(r.lastMessage,"저장된 경기를 복원했습니다.",400);
+        serveChangeLog = safeText(r.serveChangeLog,lastMessage,400);
+        gameOver = Boolean(r.gameOver); winnerTeam = validTeam(r.winnerTeam) ? r.winnerTeam : null;
+        quizMode = r.quizMode; currentQuiz = r.currentQuiz;
+        document.getElementById("usTeamInput").value = teamNames.us;
+        document.getElementById("themTeamInput").value = teamNames.them;
+        ["A","B","C","D"].forEach(p => document.getElementById("player"+p+"Input").value = playerNames[p]);
+        restoring = false;
+        return true;
+      } catch (err) { restoring = false; appStatus("저장된 기록이 손상되어 기본 상태로 시작합니다. 기존 기록은 자동으로 덮어쓰지 않습니다."); storageEnabled = false; return false; }
+    }
+    function resultText() {
+      const score = servingTeam === "us" ? `${usScore}-${themScore}` : `${themScore}-${usScore}`;
+      return ["피클볼 점수·서브 위치 학습 기록", "", `우리 팀: ${teamNames.us} (${playerNames.A}, ${playerNames.B})`,
+        `상대 팀: ${teamNames.them} (${playerNames.C}, ${playerNames.D})`,
+        `연습 모드: ${serveMode === "doubles" ? "복식" : "단식"}`, `점수: ${teamNames.us} ${usScore} - ${themScore} ${teamNames.them}`,
+        `점수 콜: ${score}${serveMode === "doubles" ? "-"+serverNumber : ""}`,
+        `서브 팀: ${teamNames[servingTeam]}`, `현재 서버: ${playerNames[currentServer]}`,
+        `경기 종료: ${gameOver ? "예" : "아니오"}`, `학습 설명: ${lastMessage}`].join("\n");
+    }
+    function exportResult() {
+      try {
+        const blob = new Blob(["\ufeff",resultText()], {type:"text/plain;charset=utf-8"});
+        if (!window.URL || !URL.createObjectURL) throw Error("unsupported");
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        if (!("download" in a)) { URL.revokeObjectURL(url); throw Error("unsupported"); }
+        a.href = url; a.download = "pickleball-learning-record.txt";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        appStatus("다운로드를 요청했습니다. 파일이 저장되지 않았다면 공유 또는 복사를 이용해 주세요.");
+      } catch (err) { appStatus("파일 다운로드를 사용할 수 없습니다. 기록 공유 또는 기록 복사를 이용해 주세요."); }
+    }
+    async function shareResult() {
+      if (!navigator.share) { appStatus("이 브라우저는 공유를 지원하지 않습니다. 기록 복사를 이용해 주세요."); return; }
+      try {
+        const text = resultText();
+        const file = typeof File !== "undefined" ? new File(["\ufeff",text],"pickleball-learning-record.txt",{type:"text/plain"}) : null;
+        if (file && navigator.canShare && navigator.canShare({files:[file]})) await navigator.share({files:[file],title:"피클볼 학습 기록"});
+        else await navigator.share({title:"피클볼 학습 기록",text});
+        appStatus("공유 화면을 닫았습니다. 실제 저장 여부는 선택한 앱에서 확인해 주세요.");
+      } catch (err) { appStatus(err && err.name === "AbortError" ? "공유가 취소되었습니다." : "공유할 수 없습니다. 기록 복사를 이용해 주세요."); }
+    }
+    async function copyResult() {
+      const text = resultText();
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.writeText) throw Error("unsupported");
+        await navigator.clipboard.writeText(text); appStatus("기록 텍스트를 복사했습니다.");
+      } catch (err) {
+        const area = document.createElement("textarea"); area.value = text;
+        area.style.position = "fixed"; area.style.top = "0"; area.style.left = "0"; area.style.opacity = "0";
+        document.body.appendChild(area); area.focus(); area.select();
+        let copied = false;
+        try { copied = document.execCommand("copy"); } catch (e) {}
+        area.remove();
+        appStatus(copied ? "기록 텍스트를 복사했습니다." : "자동 복사에 실패했습니다. '기록 TXT 저장'을 이용해 주세요.");
+      }
+    }
+    function printResult() {
+      if (typeof window.print !== "function") { appStatus("이 브라우저에서는 인쇄를 지원하지 않습니다. 기록을 저장하거나 복사해 주세요."); return; }
+      try { window.print(); } catch (err) { appStatus("인쇄를 실행하지 못했습니다. 기록을 저장하거나 복사해 주세요."); }
+    }
+    function clearSavedResult() {
+      if (!window.confirm("이 웹앱에 저장된 경기 기록을 삭제할까요?")) return;
+      try { localStorage.removeItem(STORAGE_KEY); storageEnabled = true; storageEnabled = false; appStatus("저장 기록을 삭제했습니다. 현재 화면은 유지되며, 이 페이지를 다시 열 때까지 자동 저장은 중지됩니다."); }
+      catch (err) { appStatus("저장 기록 삭제에 실패했습니다. 브라우저 사이트 데이터 설정을 확인해 주세요."); }
+    }
+    let usScore = 0;
+    let themScore = 0;
+    let servingTeam = "us";
+    let serverNumber = 2;
+    let serveMode = "doubles";
+    let selectedAnswer = null;
+    let currentQuiz = 0;
+    let quizMode = "score";
+    const MAX_SCORE = 11;
+    let gameOver = false;
+    let winnerTeam = null;
+    let teamNames = {
+      us: "우리 팀",
+      them: "상대 팀"
+    };
+    let playerNames = {A:"A",B:"B",C:"C",D:"D"};
+
+    // 복식 선수 상태
+    // A, B는 우리 팀 / C, D는 상대 팀
+    let players = {
+      A: { team: "us", side: "right" },
+      B: { team: "us", side: "left" },
+      C: { team: "them", side: "right" },
+      D: { team: "them", side: "left" }
+    };
+
+    // 현재 서버와 리시버
+    let currentServer = "A";
+    let currentReceiver = "D";
+
+    let lastMessage = "경기 시작은 0-0-2입니다. 첫 서브 팀은 한 명만 서브 기회를 갖기 때문에 2번 서버로 시작합니다.";
+    let serveChangeLog = "복식은 0-0-2에서 시작합니다. 아래쪽 팀 A 선수가 2번 서버로 오른쪽에서 화면 위 왼쪽, 즉 상대 기준 오른쪽 코트로 대각선 서브를 합니다.";
+
+    const scoreQuizzes = [
+      { q: "우리 팀이 서브 중이고 우리 점수 3점, 상대 점수 2점, 1번 서버입니다. 알맞은 점수 콜은?", options: ["3-2-1", "2-3-1", "3-2-2"], answer: "3-2-1", exp: "복식 점수는 서브 팀 점수-리시브 팀 점수-서버 번호 순서입니다." },
+      { q: "복식 경기 시작 점수로 알맞은 것은?", options: ["0-0-1", "0-0-2", "1-0-1"], answer: "0-0-2", exp: "첫 서브 팀은 한 명만 서브하므로 0-0-2로 시작합니다." },
+      { q: "상대 팀이 서브 중입니다. 상대 점수 6점, 우리 점수 4점, 2번 서버라면 점수 콜은?", options: ["4-6-2", "6-4-2", "6-2-4"], answer: "6-4-2", exp: "항상 서브 팀 점수를 먼저 말합니다." },
+      { q: "서브 팀이 랠리에서 이기면 어떻게 될까요?", options: ["서브 팀이 1점 얻는다", "리시브 팀이 1점 얻는다", "무조건 사이드 아웃"], answer: "서브 팀이 1점 얻는다", exp: "전통적인 피클볼 득점에서는 서브 팀만 점수를 얻습니다." },
+      { q: "리시브 팀이 랠리에서 이겼고, 1번 서버가 서브 중이었다면?", options: ["리시브 팀 1점", "같은 팀 파트너가 2번 서버", "경기 종료"], answer: "같은 팀 파트너가 2번 서버", exp: "복식에서는 1번 서버가 실패하면 같은 팀의 파트너가 2번 서버가 됩니다." },
+      { q: "리시브 팀이 랠리에서 이겼고, 2번 서버가 서브 중이었다면?", options: ["사이드 아웃", "2번 서버가 다시 서브", "리시브 팀 2점"], answer: "사이드 아웃", exp: "2번 서버까지 서브권을 잃으면 상대 팀으로 서브권이 넘어갑니다." },
+      { q: "우리 팀 점수 8점, 상대 팀 점수 7점, 우리 팀 2번 서버가 서브한다면?", options: ["8-7-2", "7-8-2", "8-2-7"], answer: "8-7-2", exp: "서브 팀 점수-리시브 팀 점수-서버 번호입니다." },
+      { q: "점수 콜 5-3-1의 뜻으로 알맞은 것은?", options: ["서브 팀 5점, 리시브 팀 3점, 1번 서버", "우리 팀 5점, 상대 팀 3점, 1세트", "서브 팀 3점, 리시브 팀 5점, 1번 서버"], answer: "서브 팀 5점, 리시브 팀 3점, 1번 서버", exp: "세 번째 숫자는 복식에서 서버 번호를 뜻합니다." },
+      { q: "복식에서 서버 번호가 필요한 이유는?", options: ["두 명의 서버 순서를 구분하기 위해", "세트 수를 표시하기 위해", "코트 크기를 표시하기 위해"], answer: "두 명의 서버 순서를 구분하기 위해", exp: "복식은 한 팀에 두 명이 있으므로 1번 서버와 2번 서버를 구분합니다." },
+      { q: "이 웹앱의 수업용 경기에서 몇 점에 먼저 도달하면 승리하나요?", options: ["7점", "11점", "15점"], answer: "11점", exp: "학습용 게임은 11점에 먼저 도달한 팀이 승리하도록 설정했습니다." }
+    ];
+
+    const serveQuizzes = [
+      { q: "1-1-1에서 왼쪽의 A 선수가 서브하다가 랠리에서 졌습니다. 다음은?", options: ["A가 다시 서브", "오른쪽의 파트너 B가 2번 서버", "상대 팀이 바로 1점"], answer: "오른쪽의 파트너 B가 2번 서버", exp: "1번 서버가 실패하면 같은 팀 파트너가 2번 서버가 됩니다." },
+      { q: "복식에서 서브 팀이 득점하면 어느 팀 선수들이 좌우를 바꾸나요?", options: ["서브 팀만", "리시브 팀만", "양 팀 모두"], answer: "서브 팀만", exp: "서브 팀이 득점하면 같은 서버가 계속 서브하고 서브 팀 선수만 좌우 위치를 바꿉니다." },
+      { q: "복식에서 리시브 팀은 서브 팀이 득점할 때 어떻게 되나요?", options: ["위치 고정", "반드시 좌우 교대", "서버가 됨"], answer: "위치 고정", exp: "서브 팀이 득점해도 리시브 팀은 위치를 바꾸지 않습니다." },
+      { q: "단식에서 서버 점수가 0점입니다. 어디에서 서브할까요?", options: ["오른쪽", "왼쪽", "키친 안"], answer: "오른쪽", exp: "단식은 서버 점수가 짝수면 오른쪽에서 서브합니다." },
+      { q: "단식에서 서버 점수가 5점입니다. 어디에서 서브할까요?", options: ["오른쪽", "왼쪽", "가운데"], answer: "왼쪽", exp: "홀수 점수이면 왼쪽에서 서브합니다." },
+      { q: "복식에서 서브 팀 점수가 4점입니다. 서버는 보통 어느 쪽에서 서브할까요?", options: ["오른쪽", "왼쪽", "아무 곳"], answer: "오른쪽", exp: "서브 팀 점수가 짝수이면 오른쪽 코트에서 서브합니다." },
+      { q: "복식에서 서브 팀 점수가 7점입니다. 서버는 보통 어느 쪽에서 서브할까요?", options: ["오른쪽", "왼쪽", "네트 앞"], answer: "왼쪽", exp: "서브 팀 점수가 홀수이면 왼쪽 코트에서 서브합니다." },
+      { q: "서브 방향으로 맞는 것은?", options: ["대각선 방향", "직선 방향", "뒤쪽 방향"], answer: "대각선 방향", exp: "피클볼 서브는 대각선 상대 서비스 코트로 넣습니다." },
+      { q: "우리 팀이 화면 아래 오른쪽에서 서브한다면 공은 어디로 가야 할까요?", options: ["화면 위 왼쪽 코트(상대 기준 오른쪽)", "화면 위 오른쪽 코트(상대 기준 왼쪽)", "우리 왼쪽 코트"], answer: "화면 위 왼쪽 코트(상대 기준 오른쪽)", exp: "화면 기준으로는 대각선 반대쪽이고, 상대팀 기준으로는 오른쪽 서비스 코트입니다." },
+      { q: "2번 서버도 랠리에서 졌습니다. 다음은?", options: ["사이드 아웃", "1번 서버로 돌아감", "같은 선수가 계속 서브"], answer: "사이드 아웃", exp: "2번 서버가 실패하면 상대 팀으로 서브권이 넘어갑니다." }
+    ];
+
+    function openTab(tabName, button) {
+      document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.getElementById(tabName).classList.add("active");
+      button.classList.add("active");
+      updateDisplay();
+    }
+
+    function getTeamPlayers(team) {
+      return team === "us" ? ["A", "B"] : ["C", "D"];
+    }
+
+    function getOpponentTeam(team) {
+      return team === "us" ? "them" : "us";
+    }
+
+    function getTeamName(team) {
+      return teamNames[team];
+    }
+
+    function applyPlayerNames(){
+      ["A","B","C","D"].forEach(id=>{
+        const el=document.getElementById("player"+id);
+        const input=document.getElementById("player"+id+"Input");
+        if(input){
+          playerNames[id]=(input.value.trim() || id).slice(0,30);
+          const lbl=document.getElementById("label"+id); if(lbl) lbl.textContent=playerNames[id];
+        }
+      });
+    }
+
+    function applyTeamNames() {
+      const usInput = document.getElementById("usTeamInput").value.trim();
+      const themInput = document.getElementById("themTeamInput").value.trim();
+
+      teamNames.us = (usInput || "우리 팀").slice(0,12);
+      teamNames.them = (themInput || "상대 팀").slice(0,12);
+
+      applyPlayerNames();
+      updateTeamLabels();
+      updateDisplay();
+      renderQuiz();
+    }
+
+    function setTeamPreset(usName, themName) {
+      document.getElementById("usTeamInput").value = usName;
+      document.getElementById("themTeamInput").value = themName;
+      applyTeamNames();
+    }
+
+    function updateTeamLabels() {
+      document.getElementById("usScoreLabel").textContent = `${teamNames.us} 점수`;
+      document.getElementById("themScoreLabel").textContent = `${teamNames.them} 점수`;
+      document.getElementById("serveUsScoreLabel").textContent = `${teamNames.us} 점수`;
+      document.getElementById("serveThemScoreLabel").textContent = `${teamNames.them} 점수`;
+
+      const usScoreBtn = document.getElementById("usScoreBtn");
+      const themScoreBtn = document.getElementById("themScoreBtn");
+      const usRallyBtn = document.getElementById("usRallyBtn");
+      const themRallyBtn = document.getElementById("themRallyBtn");
+
+      if(usScoreBtn) usScoreBtn.textContent = `${teamNames.us} 득점`;
+      if(themScoreBtn) themScoreBtn.textContent = `${teamNames.them} 득점`;
+      if(usRallyBtn) usRallyBtn.textContent = `${teamNames.us} 랠리 승리`;
+      if(themRallyBtn) themRallyBtn.textContent = `${teamNames.them} 랠리 승리`;
+      const bl=document.getElementById("bottomLeftLabel");
+      const br=document.getElementById("bottomRightLabel");
+      const tl=document.getElementById("topLeftLabel");
+      const tr=document.getElementById("topRightLabel");
+      if(bl) bl.textContent=`${teamNames.us} 왼쪽`;
+      if(br) br.textContent=`${teamNames.us} 오른쪽`;
+      if(tl) tl.textContent=`${teamNames.them} 오른쪽`;
+      if(tr) tr.textContent=`${teamNames.them} 왼쪽`;
+
+      const legend = document.querySelector(".legend");
+      syncManualControls();
+
+      if (legend) {
+        legend.innerHTML = `
+          <span>${escapeHTML(teamNames.us)}: ${escapeHTML(playerNames.A)}, ${escapeHTML(playerNames.B)}</span>
+          <span>${escapeHTML(teamNames.them)}: ${escapeHTML(playerNames.C)}, ${escapeHTML(playerNames.D)}</span>
+          <span>A/B/C/D: 각자 고정 색</span>
+          <span>노란 테두리: 서버</span>
+          <span>점선 테두리: 리시버</span>
+          <span>초록 영역: 서브 위치</span>
+        `;
+      }
+    }
+
+    function getPlayerOnSide(team, side) {
+      return getTeamPlayers(team).find(p => players[p].side === side);
+    }
+
+    function getOppositeSide(side) {
+      return side === "right" ? "left" : "right";
+    }
+
+    function getServingScore() {
+      return servingTeam === "us" ? usScore : themScore;
+    }
+
+    function getReceivingScore() {
+      return servingTeam === "us" ? themScore : usScore;
+    }
+
+    function getServeSide() {
+      return getServingScore() % 2 === 0 ? "right" : "left";
+    }
+
+    function getReceiveSide() {
+      return getOppositeSide(getServeSide());
+    }
+
+    function getSideText(side) {
+      return side === "right" ? "오른쪽" : "왼쪽";
+    }
+
+    // 선수 본인 기준의 오른쪽/왼쪽을 화면 기준 왼쪽/오른쪽으로 변환합니다.
+    // 화면 아래 우리 팀은 본인 기준과 화면 기준이 같습니다.
+    // 화면 위 상대 팀은 마주 보고 있으므로 본인 기준 오른쪽이 화면 왼쪽에 보입니다.
+    function getVisualSide(team, playerSide) {
+      if (team === "them") {
+        return playerSide === "right" ? "left" : "right";
+      }
+      return playerSide;
+    }
+
+    // 화면 기준 위치를 선수 본인 기준 위치로 되돌립니다.
+    function getPlayerSideFromVisual(team, visualSide) {
+      if (team === "them") {
+        return visualSide === "right" ? "left" : "right";
+      }
+      return visualSide;
+    }
+
+    // 단식 전용 위치 동기화:
+    // 서버 점수가 짝수면 서버는 오른쪽, 홀수면 왼쪽.
+    // 리시버는 반드시 서버의 대각선 반대편에 표시합니다.
+    function syncSinglesPositions() {
+      if (serveMode !== "singles") return;
+
+      currentServer = servingTeam === "us" ? "A" : "C";
+      currentReceiver = servingTeam === "us" ? "C" : "A";
+
+      const serverSide = getServingScore() % 2 === 0 ? "right" : "left";
+      const receiverSide = serverSide;
+
+      players[currentServer].side = serverSide;
+      players[currentReceiver].side = receiverSide;
+
+      // 단식에서 사용하지 않는 파트너도 기본 위치를 유지해 두어 모드 전환 시 오류를 줄입니다.
+      players.B.side = "left";
+      players.D.side = "right";
+    }
+
+    function swapServingTeamPositions() {
+      const teamPlayers = getTeamPlayers(servingTeam);
+      const first = teamPlayers[0];
+      const second = teamPlayers[1];
+      const temp = players[first].side;
+      players[first].side = players[second].side;
+      players[second].side = temp;
+      animatePlayers(teamPlayers);
+    }
+
+    function animatePlayers(ids) {
+      ids.forEach(id => {
+        const el = document.getElementById("player" + id);
+        el.classList.remove("moving");
+        void el.offsetWidth;
+        el.classList.add("moving");
+      });
+      setTimeout(() => {
+        ids.forEach(id => document.getElementById("player" + id).classList.remove("moving"));
+      }, 800);
+    }
+
+    function chooseServerByCurrentSide() {
+      currentServer = getPlayerOnSide(servingTeam, getServeSide());
+      currentReceiver = getPlayerOnSide(getOpponentTeam(servingTeam), getServeSide());
+    }
+
+    function choosePartnerAsSecondServer() {
+      const teamPlayers = getTeamPlayers(servingTeam);
+      currentServer = teamPlayers.find(p => p !== currentServer);
+      currentReceiver = getPlayerOnSide(getOpponentTeam(servingTeam), players[currentServer].side);
+      animatePlayers([currentServer]);
+    }
+
+    function sideOutTo(winnerTeam) {
+      servingTeam = winnerTeam;
+      serverNumber = 1;
+      chooseServerByCurrentSide();
+      serveChangeLog = `사이드 아웃입니다. 서브권이 ${getTeamName(winnerTeam)}에게 넘어갔습니다. 새 서브 팀 점수에 맞는 위치의 선수가 1번 서버가 됩니다.`;
+      lastMessage = serveChangeLog;
+    }
+
+    function checkGameOver() {
+      if (usScore >= MAX_SCORE) {
+        usScore = MAX_SCORE;
+        gameOver = true;
+        winnerTeam = "us";
+        lastMessage = "우리 팀이 11점에 먼저 도달하여 승리했습니다. 새로 시작하려면 점수 초기화를 누르세요.";
+        serveChangeLog = lastMessage;
+        return true;
+      }
+      if (themScore >= MAX_SCORE) {
+        themScore = MAX_SCORE;
+        gameOver = true;
+        winnerTeam = "them";
+        lastMessage = "상대 팀이 11점에 먼저 도달하여 승리했습니다. 새로 시작하려면 점수 초기화를 누르세요.";
+        serveChangeLog = lastMessage;
+        return true;
+      }
+      return false;
+    }
+
+    function blockIfGameOver() {
+      if (!gameOver) return false;
+      const teamText = getTeamName(winnerTeam);
+      lastMessage = `${teamText}이 이미 11점에 도달해 게임이 끝났습니다. 점수 초기화를 누르면 다시 연습할 수 있습니다.`;
+      serveChangeLog = lastMessage;
+      updateDisplay();
+      return true;
+    }
+
+    function applyDoublesRally(winner) {
+      const winnerText = getTeamName(winner);
+      const servingText = getTeamName(servingTeam);
+      const oldServer = currentServer;
+
+      if (winner === servingTeam) {
+        if (winner === "us") usScore++;
+        else themScore++;
+
+        swapServingTeamPositions();
+        // 득점하면 같은 사람이 계속 서버입니다.
+        currentServer = oldServer;
+        currentReceiver = getPlayerOnSide(getOpponentTeam(servingTeam), players[currentServer].side);
+
+        serveChangeLog = `${winnerText}이 득점했습니다. 같은 ${currentServer} 선수가 계속 서브하지만, 서브 팀 선수 A/B 또는 C/D만 좌우 위치를 바꿉니다. 리시브 팀은 고정됩니다.`;
+        lastMessage = serveChangeLog;
+      } else {
+        if (serverNumber === 1) {
+          serverNumber = 2;
+          choosePartnerAsSecondServer();
+          serveChangeLog = `${servingText}의 1번 서버 ${oldServer} 선수가 랠리를 잃었습니다. 점수는 그대로이고, 같은 팀 파트너 ${currentServer} 선수가 2번 서버가 됩니다.`;
+          lastMessage = serveChangeLog;
+        } else {
+          sideOutTo(winner);
+        }
+      }
+    }
+
+    function applySinglesRally(winner) {
+      const winnerText = getTeamName(winner);
+      if (winner === servingTeam) {
+        if (winner === "us") usScore++;
+        else themScore++;
+        chooseServerByCurrentSide();
+        serveChangeLog = `${winnerText}이 서브 중 랠리를 이겨 1점을 얻었습니다. 서버 점수가 바뀌어 짝수/홀수 규칙에 따라 위치가 바뀝니다.`;
+      } else {
+        servingTeam = winner;
+        chooseServerByCurrentSide();
+        serveChangeLog = `${winnerText}이 리시브 상황에서 랠리를 이겼습니다. 단식에서는 점수는 그대로이고 서브권만 넘어갑니다.`;
+      }
+      lastMessage = serveChangeLog;
+    }
+
+    function rallyWin(winner) {
+      if (blockIfGameOver()) return;
+      if (serveMode === "singles") applySinglesRally(winner);
+      else applyDoublesRally(winner);
+      checkGameOver();
+      updateDisplay();
+    }
+
+    function serveRallyWin(winner) {
+      rallyWin(winner);
+    }
+
+    function forceSideOut() {
+      if (blockIfGameOver()) return;
+      const newTeam = getOpponentTeam(servingTeam);
+      sideOutTo(newTeam);
+      updateDisplay();
+    }
+
+    function serveForceSideOut() {
+      if (blockIfGameOver()) return;
+      if (serveMode === "singles") {
+        servingTeam = getOpponentTeam(servingTeam);
+        chooseServerByCurrentSide();
+        serveChangeLog = `${getTeamName(servingTeam)}으로 서브권이 넘어갔습니다. 단식은 새 서버의 점수에 따라 위치가 정해집니다.`;
+        lastMessage = serveChangeLog;
+      } else {
+        sideOutTo(getOpponentTeam(servingTeam));
+      }
+      updateDisplay();
+    }
+
+    function resetPlayers() {
+      players = {
+        A: { team: "us", side: "right" },
+        B: { team: "us", side: "left" },
+        C: { team: "them", side: "right" },
+        D: { team: "them", side: "left" }
+      };
+    }
+
+    function resetGame() {
+      usScore = 0;
+      themScore = 0;
+      servingTeam = "us";
+      serverNumber = serveMode === "doubles" ? 2 : 1;
+      resetPlayers();
+      currentServer = "A";
+      currentReceiver = serveMode === "doubles" ? "D" : "C";
+      if (serveMode === "singles") {
+        players.A.side = "right";
+        players.C.side = "left";
+      }
+      gameOver = false;
+      winnerTeam = null;
+      lastMessage = serveMode === "doubles"
+        ? `경기 시작은 0-0-2입니다. ${getTeamName("us")} A 선수가 2번 서버로 오른쪽에서 화면 위 왼쪽, 즉 상대 기준 오른쪽 코트로 서브합니다.`
+        : "단식은 0-0에서 시작합니다. 서버 점수 0점이므로 오른쪽에서 시작합니다.";
+      serveChangeLog = lastMessage;
+      updateDisplay();
+    }
+
+    function serveReset() {
+      resetGame();
+    }
+
+    function setServeMode(mode) {
+      serveMode = mode;
+      document.getElementById("doublesBtn").classList.toggle("active", mode === "doubles");
+      document.getElementById("singlesBtn").classList.toggle("active", mode === "singles");
+      resetGame();
+    }
+
+    function clampScore(value) {
+      return Math.max(0, Math.min(MAX_SCORE, value));
+    }
+
+    function adjustScore(team, delta) {
+      usScore = clampScore(usScore);
+      themScore = clampScore(themScore);
+
+      if (team === "us") usScore = clampScore(usScore + delta);
+      else themScore = clampScore(themScore + delta);
+
+      gameOver = false;
+      winnerTeam = null;
+
+      // 수동 수정 후에는 현재 서브 팀 점수에 맞는 위치의 선수를 서버로 다시 맞춥니다.
+      if (serveMode === "doubles") {
+        chooseServerByCurrentSide();
+      } else {
+        syncSinglesPositions();
+      }
+
+      lastMessage = "수동으로 점수를 조정했습니다. 현재 점수와 서브 위치가 다시 계산되었습니다.";
+      serveChangeLog = lastMessage;
+      checkGameOver();
+      updateDisplay();
+    }
+
+    function setServingTeamManual(team) {
+      servingTeam = team;
+      gameOver = false;
+      winnerTeam = null;
+
+      if (serveMode === "doubles") {
+        chooseServerByCurrentSide();
+      } else {
+        syncSinglesPositions();
+      }
+
+      lastMessage = `${getTeamName(servingTeam)}으로 서브 팀을 수동 변경했습니다.`;
+      serveChangeLog = lastMessage;
+      checkGameOver();
+      updateDisplay();
+    }
+
+    function setServerNumberManual(value) {
+      serverNumber = Number(value);
+      if (serveMode === "doubles") {
+        if (serverNumber === 1) {
+          chooseServerByCurrentSide();
+        } else {
+          const firstServer = getPlayerOnSide(servingTeam, getServeSide());
+          currentServer = getTeamPlayers(servingTeam).find(p => p !== firstServer);
+          currentReceiver = getPlayerOnSide(getOpponentTeam(servingTeam), players[currentServer].side);
+        }
+      }
+
+      lastMessage = `서버 번호를 ${serverNumber}번 서버로 수동 변경했습니다.`;
+      serveChangeLog = lastMessage;
+      updateDisplay();
+    }
+
+    function syncManualControls() {
+      const pairs = [
+        ["manualUsScore", usScore],
+        ["manualThemScore", themScore],
+        ["serveManualUsScore", usScore],
+        ["serveManualThemScore", themScore]
+      ];
+      pairs.forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      });
+
+      ["manualServingTeam", "serveManualServingTeam"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = servingTeam;
+        if (el) {
+          el.options[0].textContent = teamNames.us;
+          el.options[1].textContent = teamNames.them;
+        }
+      });
+
+      ["manualServerNumber", "serveManualServerNumber"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.value = String(serverNumber);
+          el.disabled = serveMode === "singles";
+        }
+      });
+
+      const labels = {
+        manualUsLabel: `${teamNames.us} 점수`,
+        manualThemLabel: `${teamNames.them} 점수`,
+        serveManualUsLabel: `${teamNames.us} 점수`,
+        serveManualThemLabel: `${teamNames.them} 점수`
+      };
+      Object.entries(labels).forEach(([id, text]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      });
+    }
+
+    function updateDisplay() {
+      syncSinglesPositions();
+      const servingScore = getServingScore();
+      const receivingScore = getReceivingScore();
+      const servingText = getTeamName(servingTeam);
+      const scoreCall = serveMode === "doubles"
+        ? `${servingScore}-${receivingScore}-${serverNumber}`
+        : `${servingScore}-${receivingScore}`;
+
+      document.getElementById("scoreCall").textContent = scoreCall;
+      document.getElementById("usScore").textContent = usScore;
+      document.getElementById("themScore").textContent = themScore;
+      document.getElementById("serverNumber").textContent = serveMode === "doubles" ? serverNumber : "-";
+
+      const winnerText = winnerTeam ? `${getTeamName(winnerTeam)} 승리! 11점에 먼저 도달했습니다.` : "";
+      document.getElementById("winnerBanner").textContent = gameOver ? winnerText : "";
+      document.getElementById("winnerBanner").classList.toggle("show", gameOver);
+      document.getElementById("serveWinnerBanner").textContent = gameOver ? winnerText : "";
+      document.getElementById("serveWinnerBanner").classList.toggle("show", gameOver);
+
+      document.getElementById("explanation").innerHTML =
+        `<strong>현재 서브:</strong> ${escapeHTML(servingText)} ${serveMode === "doubles" ? currentServer + " 선수, " + serverNumber + "번 서버" : "선수"}, ${getSideText(players[currentServer].side)} 코트<br>${escapeHTML(lastMessage)}`;
+
+      syncManualControls();
+      updateServeCourt();
+      saveState();
+    }
+
+    function clearCourtHighlights() {
+      ["topLeft", "topRight", "bottomLeft", "bottomRight"].forEach(id => {
+        document.getElementById(id).classList.remove("active-serve", "active-receive");
+      });
+    }
+
+    function placePlayer(id) {
+      const el = document.getElementById("player" + id);
+      const player = players[id];
+      const isTop = player.team === "them";
+
+      // 단식에서는 실제 경기자 A, C만 표시합니다.
+      if (serveMode === "singles" && (id === "B" || id === "D")) {
+        el.style.display = "none";
+        return;
+      }
+
+      // 선수 색은 A/B/C/D별 고정 색으로 유지합니다.
+      el.className = `player player-${id.toLowerCase()}`;
+      if (id === currentServer) el.classList.add("server-player");
+      if (id === currentReceiver) el.classList.add("receiver-player");
+
+      const visualSide = getVisualSide(player.team, player.side);
+      el.classList.add(isTop ? "p-top" : "p-bottom");
+      el.classList.add(visualSide === "right" ? "p-right" : "p-left");
+      el.style.display = "flex";
+    }
+
+    function getBoxId(team, side) {
+      const visualSide = getVisualSide(team, side);
+      if (team === "us") return visualSide === "right" ? "bottomRight" : "bottomLeft";
+      return visualSide === "right" ? "topRight" : "topLeft";
+    }
+
+    function drawArrow() {
+      syncSinglesPositions();
+
+      const arrow = document.getElementById("serveArrow");
+      const label = document.getElementById("arrowLabel");
+      const court = document.getElementById("court");
+      const w = court.clientWidth;
+      const h = court.clientHeight;
+
+      const serverTeamTop = players[currentServer].team === "them";
+      const serverVisualSide = getVisualSide(players[currentServer].team, players[currentServer].side);
+
+      // 서브는 반드시 화면 기준 대각선 반대편으로 향합니다.
+      const targetVisualSide = serverVisualSide === "right" ? "left" : "right";
+
+      let x1 = serverVisualSide === "right" ? w * 0.75 : w * 0.25;
+      let x2 = targetVisualSide === "right" ? w * 0.75 : w * 0.25;
+      let y1 = serverTeamTop ? h * 0.18 : h * 0.82;
+      let y2 = serverTeamTop ? h * 0.82 : h * 0.18;
+
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const fullLength = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+      const startGap = 38;
+      const endGap = 64;
+      const unitX = dx / fullLength;
+      const unitY = dy / fullLength;
+      const shortX1 = x1 + unitX * startGap;
+      const shortY1 = y1 + unitY * startGap;
+      const shortLength = Math.max(40, fullLength - startGap - endGap);
+
+      arrow.style.left = shortX1 + "px";
+      arrow.style.top = shortY1 + "px";
+      arrow.style.width = shortLength + "px";
+      arrow.style.transform = `rotate(${angle}deg)`;
+
+      label.style.left = ((x1 + x2) / 2 - 36) + "px";
+      label.style.top = ((y1 + y2) / 2 - 18) + "px";
+    }
+
+    function updateServeCourt() {
+      if (serveMode === "singles") {
+        syncSinglesPositions();
+      }
+
+      clearCourtHighlights();
+
+      const serveBox = getBoxId(players[currentServer].team, players[currentServer].side);
+      const receiveBox = getBoxId(players[currentReceiver].team, players[currentReceiver].side);
+      document.getElementById(serveBox).classList.add("active-serve");
+      document.getElementById(receiveBox).classList.add("active-receive");
+
+      ["A", "B", "C", "D"].forEach(placePlayer);
+      drawArrow();
+
+      const servingText = getTeamName(servingTeam);
+      const servingScore = getServingScore();
+      const receivingScore = getReceivingScore();
+      const scoreCall = serveMode === "doubles"
+        ? `${servingScore}-${receivingScore}-${serverNumber}`
+        : `${servingScore}-${receivingScore}`;
+
+      document.getElementById("serveUsScore").textContent = usScore;
+      document.getElementById("serveThemScore").textContent = themScore;
+      document.getElementById("thirdLabel").textContent = serveMode === "doubles" ? "서버 번호" : "단식";
+      document.getElementById("serveServerNumber").textContent = serveMode === "doubles" ? serverNumber : "-";
+
+      document.getElementById("serveTitle").textContent = serveMode === "doubles" ? "복식 서브 위치" : "단식 서브 위치";
+      document.getElementById("serveExplanation").innerHTML =
+        `<strong>${escapeHTML(servingText)} ${currentServer} 선수</strong>가 <strong>${getSideText(players[currentServer].side)} 코트</strong>에서 서브합니다.<br>
+        현재 점수 콜은 <strong>${scoreCall}</strong>입니다. ${serveMode === "singles" ? "단식은 서버 점수 " + servingScore + "점 기준으로 위치가 정해집니다." : ""}
+        위쪽 코트의 왼쪽/오른쪽 표시는 <strong>상대팀이 바라보는 기준</strong>입니다. 서브 화살표는 항상 화면 기준 대각선 반대편 서비스 코트로 향합니다.`;
+
+      document.getElementById("serveChangeLog").textContent = serveChangeLog;
+
+      if (serveMode === "doubles") {
+        document.getElementById("serveTip").innerHTML =
+          `복식 핵심: <strong>1번 서버가 실패하면 같은 팀 파트너가 2번 서버</strong>가 됩니다.
+          서브 팀이 득점하면 같은 서버가 계속 서브하고, <strong>서브 팀 두 선수만</strong> 좌우 위치를 바꿉니다.
+          2번 서버가 실패하면 사이드 아웃입니다.`;
+      } else {
+        document.getElementById("serveTip").innerHTML =
+          `단식 핵심: 위치는 <strong>서버의 점수</strong>로 결정합니다.
+          서버 점수가 짝수면 오른쪽, 홀수면 왼쪽에서 서브하고, 리시버는 그 서브를 받는 대각선 서비스 코트에 섭니다.
+          리시브 선수가 랠리를 이기면 점수는 그대로이고 서브권만 넘어갑니다.`;
+      }
+    }
+
+    function setQuizMode(mode) {
+      quizMode = mode;
+      currentQuiz = 0;
+      document.getElementById("scoreQuizBtn").classList.toggle("active", mode === "score");
+      document.getElementById("serveQuizBtn").classList.toggle("active", mode === "serve");
+      renderQuiz();
+    }
+
+    function getCurrentQuizList() {
+      return quizMode === "score" ? scoreQuizzes : serveQuizzes;
+    }
+
+    function formatTeamText(text) {
+      return String(text).split("우리 팀").join(teamNames.us).split("상대 팀").join(teamNames.them);
+    }
+
+    function renderQuiz() {
+      const quizList = getCurrentQuizList();
+      const quiz = quizList[currentQuiz];
+      selectedAnswer = null;
+      const label = quizMode === "score" ? "점수 학습" : "서브 위치";
+      const box = document.getElementById("quizBox");
+      box.innerHTML = "";
+      const heading = document.createElement("h3");
+      heading.textContent = `${label} 문제 ${currentQuiz + 1} / ${quizList.length}`;
+      const question = document.createElement("p");
+      question.style.cssText = "font-size:18px;line-height:1.6";
+      question.textContent = formatTeamText(quiz.q);
+      box.appendChild(heading); box.appendChild(question);
+      quiz.options.forEach(option => {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "quiz-option";
+        button.textContent = formatTeamText(option);
+        button.setAttribute("aria-pressed", "false");
+        button.addEventListener("click", () => selectOption(button, formatTeamText(option)));
+        box.appendChild(button);
+      });
+      const check = document.createElement("button");
+      check.type = "button"; check.className = "check-btn"; check.textContent = "정답 확인";
+      check.addEventListener("click", checkAnswer); box.appendChild(check);
+      const next = document.createElement("button");
+      next.type = "button"; next.className = "check-btn";
+      next.style.cssText = "background:#64748b;margin-left:8px";
+      next.textContent = "다음 문제"; next.addEventListener("click", nextQuiz);
+      box.appendChild(next);
+      const feedback = document.createElement("div");
+      feedback.className = "feedback"; feedback.id = "feedback";
+      feedback.setAttribute("role", "status"); feedback.setAttribute("aria-live", "polite");
+      box.appendChild(feedback);
+      saveState();
+    }
+
+    function selectOption(button, answer) {
+      selectedAnswer = answer;
+      document.querySelectorAll(".quiz-option").forEach(btn => btn.classList.remove("selected"));
+      button.classList.add("selected");
+      document.querySelectorAll(".quiz-option").forEach(btn => btn.setAttribute("aria-pressed", String(btn === button)));
+    }
+
+    function checkAnswer() {
+      const quiz = getCurrentQuizList()[currentQuiz];
+      const feedback = document.getElementById("feedback");
+      if (!selectedAnswer) {
+        feedback.textContent = "먼저 답을 선택해 주세요.";
+        feedback.style.color = "#dc2626";
+        return;
+      }
+      const formattedAnswer = formatTeamText(quiz.answer);
+      if (selectedAnswer === formattedAnswer) {
+        feedback.textContent = `정답입니다! ${formatTeamText(quiz.exp)}`;
+        feedback.style.color = "#16a34a";
+      } else {
+        feedback.textContent = `아쉽습니다. 정답은 ${formattedAnswer}입니다. ${formatTeamText(quiz.exp)}`;
+        feedback.style.color = "#dc2626";
+      }
+    }
+
+    function nextQuiz() {
+      const quizList = getCurrentQuizList();
+      currentQuiz = (currentQuiz + 1) % quizList.length;
+      renderQuiz();
+    }
+
+    let resizeFrame = 0;
+    window.addEventListener("resize", () => {
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; updateDisplay(); });
+    });
+    document.getElementById("exportBtn").addEventListener("click", exportResult);
+    document.getElementById("shareBtn").addEventListener("click", shareResult);
+    document.getElementById("copyBtn").addEventListener("click", copyResult);
+    document.getElementById("printBtn").addEventListener("click", printResult);
+    document.getElementById("clearSavedBtn").addEventListener("click", clearSavedResult);
+    document.getElementById("doublesBtn").setAttribute("aria-pressed", "true");
+    document.getElementById("singlesBtn").setAttribute("aria-pressed", "false");
+    if (!restoreState()) resetGame();
+    document.getElementById("doublesBtn").classList.toggle("active", serveMode === "doubles");
+    document.getElementById("singlesBtn").classList.toggle("active", serveMode === "singles");
+    document.getElementById("scoreQuizBtn").classList.toggle("active", quizMode === "score");
+    document.getElementById("serveQuizBtn").classList.toggle("active", quizMode === "serve");
+    updateTeamLabels();
+    updateDisplay();
+    renderQuiz();
+
+  </script>
+</body>
+</html>
