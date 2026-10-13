@@ -1,0 +1,17 @@
+
+{
+  "projects": [
+    {
+      "name": "배드민턴 복식 조추첨",
+      "description": "배드민턴 수업 복식경기 조 추첨을 위한 사이트",
+      "url": "https://service-6200.ai.studio",
+      "source": "Google AI Studio"
+    },
+    {
+      "name": "예비 교사를 위한 인지양식 수업 설계소",
+      "description": "ET 동아리 인지양식 수업 활동을 위한 사이트",
+      "url": "https://service-11486.ai.studio",
+      "source": "Google AI Studio"
+    }
+  ]
+}
