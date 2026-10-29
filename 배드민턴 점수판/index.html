@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eef1ff">
+<title>배드민턴 복식 점수판</title>
+<style>
+:root{--bg:#eef1ff;--panel:#fff7e8;--line:#c9c8df;--text:#34344a;--muted:#77758d;--a:#6f9fd8;--b:#e7a46f;--green:#69a98d;--danger:#d97878}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}body{min-height:100dvh}
+button,input,select{font:inherit}button{cursor:pointer;color:var(--text);background:#e7e3f6;border:1px solid var(--line);border-radius:12px;min-height:44px;font-weight:800;box-shadow:0 2px 5px rgba(83,76,112,.08)}
+button:disabled{opacity:.4;cursor:not-allowed}input,select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;background:#f7f0ff;color:var(--text);padding:9px 11px;font-size:16px}
+.app{min-height:100dvh;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+.hidden{display:none!important}.setup{max-width:850px;margin:auto}.setup h1{font-size:clamp(24px,5vw,38px);margin:8px 0}.sub{color:var(--muted);margin:0 0 14px}.card{background:var(--panel);border:1px solid #ddd0bf;border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 5px 16px rgba(94,82,116,.08)}.card h2{font-size:18px;margin:0 0 12px}.grid2,.grid3{display:grid;gap:10px}.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}label{font-size:13px;color:var(--muted);display:grid;gap:5px}.quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.quick button{padding:6px 13px}.checkrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.checkrow label{display:flex;align-items:center;gap:6px;color:var(--text)}.checkrow input{width:auto;min-height:auto}.primary{width:100%;background:#c9e7db;color:#285b4b;border:1px solid #94c8b3;font-size:18px}.error{color:#c53c3c;min-height:1.2em;font-size:13px;margin-top:6px}
+.scoreboard{min-height:calc(100dvh - 20px);display:grid;grid-template-rows:auto auto 1fr auto;gap:8px}.classinfo{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;background:#fff7e8;border:1px solid #ddd0bf;border-radius:12px;padding:7px 12px;font-weight:900;font-size:clamp(13px,2vw,17px)}.classinfo .date{color:#4d4b68}.classinfo .period{color:#285b4b;background:#c9e7db;border:1px solid #94c8b3;border-radius:999px;padding:3px 10px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px}.gameinfo{color:var(--muted);font-size:clamp(11px,2vw,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.topactions{display:flex;gap:6px}.topactions button{padding:5px 9px;min-height:36px;font-size:13px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.72fr) minmax(0,1fr);gap:8px;min-height:0}.team{background:#f6ecff;border:1px solid var(--line);border-radius:16px;padding:clamp(8px,2vw,16px);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-width:0}.team.a{border-top:5px solid var(--a);background:#e9f4ff}.team.b{border-top:5px solid var(--b);background:#fff0e3}.teamname{font-size:clamp(16px,3vw,26px);font-weight:900;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.players{font-size:clamp(11px,1.8vw,15px);color:var(--muted);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.score{font-size:clamp(72px,15vw,170px);font-weight:1000;line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.06em}.scorebuttons{display:grid;grid-template-columns:1fr 1.45fr;gap:7px;width:100%}.scorebuttons button{font-size:clamp(20px,3vw,30px);min-height:clamp(48px,8vh,72px)}.plus.a{background:#cfe3f6;border-color:#9bbddd;color:#315f8a}.plus.b{background:#f8ddc6;border-color:#e6b58e;color:#8a5833}
+.center{display:grid;grid-template-rows:auto 1fr;gap:8px;min-width:0}.service{background:#e5f4ed;border:2px solid #9acbb6;border-radius:16px;padding:10px;text-align:center}.service .label{color:var(--muted);font-size:11px}.server{font-size:clamp(15px,2.5vw,24px);font-weight:1000;margin:2px 0}.side{font-size:clamp(12px,1.8vw,16px);color:var(--green);font-weight:800}
+.court{position:relative;border:3px solid #729f8d;background:#cfe8d9;border-radius:8px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;min-height:170px;overflow:hidden}.court-lines{position:absolute;inset:0;z-index:1;pointer-events:none}.line{position:absolute;display:block;background:#719b8b;opacity:.92}.net{left:0;right:0;top:50%;height:4px;transform:translateY(-50%);background:#587d70;box-shadow:0 1px 0 rgba(244,255,249,.8)}.center-top{width:2px;left:50%;top:8%;bottom:50%}.center-bottom{width:2px;left:50%;top:50%;bottom:8%}.short-top{height:2px;left:0;right:0;top:32%}.short-bottom{height:2px;left:0;right:0;bottom:32%}.back-top{height:2px;left:0;right:0;top:8%}.back-bottom{height:2px;left:0;right:0;bottom:8%}.singles-left{width:2px;top:0;bottom:0;left:8%}.singles-right{width:2px;top:0;bottom:0;right:8%}.slot{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;text-align:center;padding:5px 10%;font-size:clamp(10px,1.6vw,14px);font-weight:800;min-width:0;text-shadow:none;color:#173a31}.slot.serverSlot{background:rgba(255,238,159,.48);outline:3px solid #d2a94c;outline-offset:-4px}.slot.receiverSlot{background:rgba(211,203,244,.52);box-shadow:inset 0 0 0 3px #9488c1}.badge{font-size:9px;display:block;color:#52695f;margin-top:2px}
+.main.court-swapped .team.a{grid-column:3;grid-row:1}.main.court-swapped .team.b{grid-column:1;grid-row:1}.main.court-swapped .center{grid-column:2;grid-row:1}
+.footer{display:flex;justify-content:center;gap:7px}.footer button{min-height:38px;padding:5px 13px}.winner{position:fixed;inset:0;background:rgba(226,220,244,.88);display:grid;place-items:center;z-index:10;padding:20px;backdrop-filter:blur(4px)}.winbox{width:min(430px,94vw);background:#fff3d9;border:2px solid #d7b96e;border-radius:20px;padding:22px;text-align:center;box-shadow:0 14px 40px rgba(93,79,113,.16)}.winbox h2{font-size:clamp(28px,7vw,48px);margin:0 0 8px}.winnerplayers{font-size:clamp(17px,3.5vw,23px);font-weight:800;color:#6a4b28;margin:5px 0 12px;overflow-wrap:anywhere}.winscore{font-size:clamp(50px,14vw,90px);font-weight:1000}.winbuttons{display:flex;gap:8px;margin-top:15px}.winbuttons button{flex:1}
+dialog{border:1px solid #c9c2dc;border-radius:18px;background:#f4edff;color:var(--text);width:min(720px,94vw);max-height:90dvh;overflow:auto;padding:15px;box-shadow:0 18px 50px rgba(93,79,113,.18)}dialog::backdrop{background:rgba(222,218,239,.80)}.dialog-actions{display:flex;gap:8px;margin-top:12px}.dialog-actions button{flex:1}
+@media(max-width:650px) and (orientation:portrait){.main.court-swapped .team.a{grid-column:1;grid-row:3}.main.court-swapped .team.b{grid-column:1;grid-row:1}.main.court-swapped .center{grid-column:1;grid-row:2;order:0}.grid2,.grid3{grid-template-columns:1fr}.main{grid-template-columns:1fr;grid-template-rows:auto auto auto}.center{order:3}.score{font-size:96px}.team{min-height:250px}.court{min-height:210px}}
+@media(orientation:landscape) and (max-height:520px){.app{padding:5px}.scoreboard{min-height:calc(100dvh - 10px);gap:4px}.main{gap:5px;grid-template-columns:minmax(0,1fr) minmax(155px,.65fr) minmax(0,1fr)}.team{padding:5px;border-radius:10px}.teamname{font-size:clamp(14px,2.5vw,20px)}.players{font-size:10px}.score{font-size:clamp(62px,18vh,104px)}.scorebuttons{gap:4px}.scorebuttons button{min-height:44px}.center{gap:4px}.service{padding:5px;border-radius:10px}.server{font-size:clamp(13px,2.2vw,18px)}.side{font-size:11px}.court{min-height:0}.slot{font-size:10px;padding:2px}.topactions button,.footer button{min-height:32px;padding:3px 8px;font-size:11px}.gameinfo{font-size:10px}.footer{gap:4px}}
+#court.changed #aR,#court.changed #aL{grid-row:2}#court.changed #bL,#court.changed #bR{grid-row:1}
+#court.changed #aR,#court.changed #bR{grid-column:2}#court.changed #aL,#court.changed #bL{grid-column:1}
+#court.changed #bL{grid-column:2}#court.changed #bR{grid-column:1}
+#court:not(.changed) #aR{grid-area:1/1}#court:not(.changed) #aL{grid-area:1/2}#court:not(.changed) #bL{grid-area:2/1}#court:not(.changed) #bR{grid-area:2/2}
+#court.changed #bR{grid-area:1/1}#court.changed #bL{grid-area:1/2}#court.changed #aL{grid-area:2/1}#court.changed #aR{grid-area:2/2}
+#courtChangeBtn:disabled{opacity:.55}
+</style>
+
+<style>
+/* 코트를 가로 방향으로 돌려 같은 팀이 세로 한 열에 표시되도록 구성 */
+#court .net{left:50%;right:auto;top:0;bottom:0;width:4px;height:auto;transform:translateX(-50%)}
+#court .center-top{height:2px;width:auto;left:8%;right:50%;top:50%;bottom:auto}
+#court .center-bottom{height:2px;width:auto;left:50%;right:8%;top:50%;bottom:auto}
+#court .short-top{width:2px;height:auto;top:0;bottom:0;left:32%;right:auto}
+#court .short-bottom{width:2px;height:auto;top:0;bottom:0;left:auto;right:32%}
+#court .back-top{width:2px;height:auto;top:0;bottom:0;left:8%;right:auto}
+#court .back-bottom{width:2px;height:auto;top:0;bottom:0;left:auto;right:8%}
+#court .singles-left{height:2px;width:auto;top:8%;bottom:auto;left:0;right:0}
+#court .singles-right{height:2px;width:auto;top:auto;bottom:8%;left:0;right:0}
+#court:not(.changed) #aR{grid-area:1/1}
+#court:not(.changed) #aL{grid-area:2/1}
+#court:not(.changed) #bL{grid-area:1/2}
+#court:not(.changed) #bR{grid-area:2/2}
+#court.changed #bR{grid-area:1/1}
+#court.changed #bL{grid-area:2/1}
+#court.changed #aL{grid-area:1/2}
+#court.changed #aR{grid-area:2/2}
+</style>
+
+<style>
+/* 복식 정식 코트 13.40m × 6.10m: 화면상 긴 축은 가로 */
+#court.court {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 13.4 / 6.1;
+  align-self: center;
+}
+/* 실측 비율: 복식 롱서비스라인은 백라인에서 0.76m,
+   쇼트서비스라인은 네트에서 1.98m, 단식 사이드라인은 양쪽 0.46m */
+#court .back-top {left:5.6716%}
+#court .back-bottom {right:5.6716%}
+#court .short-top {left:35.2239%}
+#court .short-bottom {right:35.2239%}
+#court .singles-left {top:7.541%}
+#court .singles-right {bottom:7.541%}
+#court .center-top {left:5.6716%}
+#court .center-bottom {right:5.6716%}
+@media (orientation:landscape) and (max-height:520px) {
+ #court.court {min-height:0;aspect-ratio:13.4 / 6.1}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<section id="setup" class="setup">
+<h1>🏸 복식 점수판</h1><p class="sub">점수와 서비스 순서를 함께 관리합니다.</p>
+<form id="setupForm">
+<div class="card"><h2>팀 · 선수</h2><div class="grid2">
+<label>A팀 이름<input id="aTeam" value="A팀" maxlength="18"></label><label>B팀 이름<input id="bTeam" value="B팀" maxlength="18"></label>
+<label>A팀 선수 1<input id="a1" value="A1" maxlength="18"></label><label>B팀 선수 1<input id="b1" value="B1" maxlength="18"></label>
+<label>A팀 선수 2<input id="a2" value="A2" maxlength="18"></label><label>B팀 선수 2<input id="b2" value="B2" maxlength="18"></label>
+</div></div>
+<div class="card"><h2>수업 정보</h2><div class="grid2">
+<label>수업 날짜<input id="classDate" type="date"></label><label>교시<select id="classPeriod"><option value="1">1교시</option><option value="2">2교시</option><option value="3">3교시</option><option value="4">4교시</option><option value="5">5교시</option><option value="6">6교시</option><option value="7">7교시</option><option value="8">8교시</option></select></label>
+</div></div>
+<div class="card"><h2>첫 서비스</h2><div class="grid2">
+<label>첫 서버<select id="firstServer"></select></label>
+<label>첫 서버 위치<select id="firstSide"><option value="R">오른쪽</option><option value="L">왼쪽</option></select></label>
+<label>첫 리시버<select id="firstReceiver"></select></label>
+</div><div class="error" id="sideHint">첫 리시버는 첫 서버의 대각선 맞은편 서비스 코트에 배치됩니다.</div></div>
+<div class="card"><h2>경기 종료</h2><div class="grid3">
+<label>목표 점수<input id="target" type="number" min="1" step="1" value="21"></label>
+<label>듀스<select id="deuce"><option value="true">사용</option><option value="false">사용 안 함</option></select></label>
+<label>최대 점수<input id="maxScore" type="number" min="2" step="1" value="30"></label>
+</div><div class="quick"><button type="button" data-target="11">11점</button><button type="button" data-target="15">15점</button><button type="button" data-target="21">21점</button></div>
+<div class="grid2" style="margin-top:9px"><label>코트 체인지 기준 점수<input id="changeScore" type="number" min="1" step="1" value="11"></label></div><div class="checkrow" style="margin-top:9px"><label><input id="useMax" type="checkbox" checked> 최대 점수 사용</label></div><div class="error" id="setupError"></div></div>
+<button class="primary" type="submit">경기 시작</button>
+</form></section>
+
+<section id="board" class="scoreboard hidden">
+<div class="topbar"><div id="gameInfo" class="gameinfo"></div><div class="topactions"><button id="settingsBtn">⚙️ 설정</button></div></div>
+<div id="classInfoDisplay" class="classinfo"><span id="classDateDisplay" class="date"></span><span id="classPeriodDisplay" class="period"></span></div>
+<div class="main">
+<section class="team a"><div><div id="aName" class="teamname"></div><div id="aPlayers" class="players"></div></div><div id="aScore" class="score">0</div><div class="scorebuttons"><button data-minus="A">−</button><button class="plus a" data-point="A">+1</button></div></section>
+<section class="center"><div class="service"><div class="label">현재 서비스</div><div id="server" class="server"></div><div id="serviceSide" class="side"></div></div><div id="court" class="court" aria-label="배드민턴 복식 코트">
+<div class="court-lines" aria-hidden="true">
+  <span class="line net"></span>
+  <span class="line center-top"></span><span class="line center-bottom"></span>
+  <span class="line short-top"></span><span class="line short-bottom"></span>
+  <span class="line back-top"></span><span class="line back-bottom"></span>
+  <span class="line singles-left"></span><span class="line singles-right"></span>
+</div>
+<div id="aR" class="slot"></div><div id="aL" class="slot"></div><div id="bL" class="slot"></div><div id="bR" class="slot"></div>
+</div></section>
+<section class="team b"><div><div id="bName" class="teamname"></div><div id="bPlayers" class="players"></div></div><div id="bScore" class="score">0</div><div class="scorebuttons"><button data-minus="B">−</button><button class="plus b" data-point="B">+1</button></div></section>
+</div>
+<div class="footer"><button id="courtChangeBtn" type="button" disabled>🔁 코트 체인지</button><button id="undoBtn" type="button">↶ 실행 취소</button><button id="cancelGameBtn" type="button">✕ 경기 취소</button><button id="resetBtn" type="button">🔄 경기 초기화</button></div>
+</section>
+</div>
+
+<div id="winner" class="winner hidden"><div class="winbox"><h2 id="winnerTitle"></h2><div id="winnerPlayers" class="winnerplayers"></div><div id="winnerScore" class="winscore"></div><div id="winnerRule" class="gameinfo"></div><div class="winbuttons"><button id="winUndo" type="button">↶ 실행 취소</button><button id="winReset" type="button">새 경기</button></div></div></div>
+
+<dialog id="settingsDialog"><form id="settingsForm"><h2>⚙️ 경기 설정</h2><div class="grid2">
+<label>A팀 이름<input id="sATeam"></label><label>B팀 이름<input id="sBTeam"></label><label>A팀 선수 1<input id="sA1"></label><label>B팀 선수 1<input id="sB1"></label><label>A팀 선수 2<input id="sA2"></label><label>B팀 선수 2<input id="sB2"></label>
+<label>코트 체인지 기준 점수<input id="sChangeScore" type="number" min="1" step="1"></label><label>목표 점수<input id="sTarget" type="number" min="1" step="1"></label><label>듀스<select id="sDeuce"><option value="true">사용</option><option value="false">사용 안 함</option></select></label>
+<label>최대 점수 사용<select id="sUseMax"><option value="true">사용</option><option value="false">사용 안 함</option></select></label><label>최대 점수<input id="sMax" type="number" min="2" step="1"></label>
+</div><div id="settingsError" class="error"></div><div class="dialog-actions"><button type="button" id="cancelSettings">취소</button><button type="submit">저장</button></div></form></dialog>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const STORAGE="badminton-doubles-scoreboard-v1";
+let state=null, history=[];
+
+function clone(x){return JSON.parse(JSON.stringify(x))}
+function other(t){return t==="A"?"B":"A"}
+function sideForScore(n){return n%2===0?"R":"L"}
+function swapPositions(t){const x=state.teams[t].pos; [x.L,x.R]=[x.R,x.L]}
+function teamScore(t){return state.teams[t].score}
+function currentServerId(){
+  const side=sideForScore(teamScore(state.servingTeam));
+  return state.teams[state.servingTeam].pos[side];
+}
+function receiverId(){
+  const serveSide=sideForScore(teamScore(state.servingTeam));
+  // 양 팀은 서로 마주보므로, 선수 시점의 서비스 코트 명칭(R/L)은
+  // 화면에서는 반대쪽에 나타난다. 따라서 서버와 '대각선'에 있는
+  // 리시버는 상대 팀의 동일한 논리 서비스 코트(R 또는 L)에 있는 선수다.
+  return state.teams[other(state.servingTeam)].pos[serveSide];
+}
+function playerName(t,id){return state.teams[t].players[id]}
+function snapshot(){history.push(clone(state)); if(history.length>200)history.shift()}
+function saveGame(){try{localStorage.setItem(STORAGE,JSON.stringify({state,history}))}catch(e){}}
+function loadGame(){
+  try{
+    const x=JSON.parse(localStorage.getItem(STORAGE));
+    if(x&&x.state&&x.state.teams){state=x.state;history=Array.isArray(x.history)?x.history:[];return true}
+  }catch(e){} return false
+}
+function updateServiceState(){
+  if(!state)return;
+  state.server=currentServerId();
+  state.serviceSide=sideForScore(teamScore(state.servingTeam));
+}
+function checkWinner(){
+  state.finished=false; state.winner=null;
+  const a=teamScore("A"),b=teamScore("B"), target=state.rules.target, max=state.rules.max;
+  let winner=null;
+  if(max!==null && (a>=max||b>=max)) winner=a>b?"A":"B";
+  else if(!state.rules.deuce){
+    if(a>=target||b>=target) winner=a>b?"A":"B";
+  }else if((a>=target||b>=target)&&Math.abs(a-b)>=2) winner=a>b?"A":"B";
+  if(winner){state.finished=true;state.winner=winner}
+  return winner;
+}
+function awardPoint(t){
+  if(!state||state.finished)return;
+  snapshot();
+  const wasServing=state.servingTeam===t;
+  state.teams[t].score++;
+  if(wasServing){
+    // 서비스 팀이 득점하면 두 파트너의 서비스 코트 위치가 서로 바뀐다.
+    swapPositions(t);
+  }else{
+    // 리시브 팀 득점: 위치는 그대로 두고 서비스권만 이동한다.
+    state.servingTeam=t;
+  }
+  updateServiceState(); checkWinner(); saveGame(); render();
+}
+function undo(){
+  if(!history.length)return;
+  state=history.pop(); updateServiceState(); saveGame(); render();
+}
+function minusTeam(t){
+  // '−'는 그 팀의 가장 최근 득점까지 역추적하여 그 직전 전체 상태로 복원한다.
+  let idx=-1;
+  for(let i=history.length-1;i>=0;i--){
+    if(history[i].teams[t].score < state.teams[t].score){idx=i;break}
+  }
+  if(idx<0)return;
+  state=clone(history[idx]); history=history.slice(0,idx); updateServiceState(); saveGame(); render();
+}
+function ruleText(){
+  let s=`목표 ${state.rules.target}점 · 듀스 ${state.rules.deuce?"ON":"OFF"}`;
+  if(state.rules.deuce&&state.rules.max!==null)s+=` · 최대 ${state.rules.max}점`;
+  return s;
+}
+function slotHTML(t,side){
+  const id=state.teams[t].pos[side], name=playerName(t,id);
+  const isServer=t===state.servingTeam&&id===state.server;
+  const isReceiver=t!==state.servingTeam&&id===receiverId();
+  return `${isServer?"🏸 ":""}${escapeHTML(name)}<span class="badge">${isServer?"SERVER":isReceiver?"RECEIVER":side==="R"?"오른쪽":"왼쪽"}</span>`;
+}
+function render(){
+  if(!state)return;
+  $("setup").classList.add("hidden");$("board").classList.remove("hidden");
+  $("aName").textContent=state.teams.A.name;$("bName").textContent=state.teams.B.name;
+  $("aPlayers").textContent=Object.values(state.teams.A.players).join(" / ");$("bPlayers").textContent=Object.values(state.teams.B.players).join(" / ");
+  $("aScore").textContent=teamScore("A");$("bScore").textContent=teamScore("B");
+  const ci=state.classInfo||{};
+  $("gameInfo").textContent=ruleText();
+  const dateText=ci.date||"날짜 미입력";
+  $("classDateDisplay").textContent=`📅 ${dateText}`;
+  $("classPeriodDisplay").textContent=`🕐 ${ci.period||"-"}교시`;
+  $("server").textContent=`🏸 ${state.teams[state.servingTeam].name} · ${playerName(state.servingTeam,state.server)}`;
+  $("serviceSide").textContent=`${state.serviceSide==="R"?"오른쪽":"왼쪽"} 서비스 코트`;
+  ["A","B"].forEach(t=>["L","R"].forEach(side=>{
+    const el=$(t.toLowerCase()+side); el.innerHTML=slotHTML(t,side);
+    const id=state.teams[t].pos[side]; el.classList.toggle("serverSlot",t===state.servingTeam&&id===state.server);el.classList.toggle("receiverSlot",t!==state.servingTeam&&id===receiverId());
+  }));
+  const threshold=state.changeScore??11;
+  const eligible=Math.max(teamScore("A"),teamScore("B"))>=threshold;
+  $("courtChangeBtn").disabled=!eligible||state.finished;
+  $("courtChangeBtn").textContent=state.courtChanged?"↩ 코트 원위치":"🔁 코트 체인지";
+  $("courtChangeBtn").title=eligible?"두 팀의 코트 위치를 바꿉니다":`${threshold}점 도달 시 사용 가능`;
+  $("court").classList.toggle("changed",!!state.courtChanged);
+  document.querySelector(".main").classList.toggle("court-swapped",!!state.courtChanged);
+  $("undoBtn").disabled=!history.length;
+  document.querySelectorAll("[data-minus]").forEach(b=>b.disabled=state.teams[b.dataset.minus].score<=0);
+  $("winner").classList.toggle("hidden",!state.finished);
+  if(state.finished){
+    $("winnerTitle").textContent=`🏆 ${state.teams[state.winner].name} 승리`;
+    $("winnerPlayers").textContent=Object.values(state.teams[state.winner].players).join(" · ");
+    $("winnerScore").textContent=`${teamScore("A")} : ${teamScore("B")}`;$("winnerRule").textContent=ruleText();
+  }
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function refreshServerOptions(){
+  const oldServer=$("firstServer").value;
+  const oldReceiver=$("firstReceiver").value;
+  const vals=[["A1",$("aTeam").value,$("a1").value],["A2",$("aTeam").value,$("a2").value],["B1",$("bTeam").value,$("b1").value],["B2",$("bTeam").value,$("b2").value]];
+  $("firstServer").innerHTML=vals.map(([v,t,p])=>`<option value="${v}">${escapeHTML(t||v[0]+"팀")} / ${escapeHTML(p||v)}</option>`).join("");
+  if(vals.some(x=>x[0]===oldServer))$("firstServer").value=oldServer;
+  const servingTeam=$("firstServer").value[0];
+  const receiverVals=vals.filter(x=>x[0][0]!==servingTeam);
+  $("firstReceiver").innerHTML=receiverVals.map(([v,t,p])=>`<option value="${v}">${escapeHTML(t||v[0]+"팀")} / ${escapeHTML(p||v)}</option>`).join("");
+  if(receiverVals.some(x=>x[0]===oldReceiver))$("firstReceiver").value=oldReceiver;
+}
+function validateRules(target,deuce,useMax,max){
+  if(!Number.isInteger(target)||target<1)return "목표 점수는 1 이상의 정수여야 합니다.";
+  if(deuce&&useMax&&(!Number.isInteger(max)||max<=target))return "최대 점수는 목표 점수보다 큰 정수여야 합니다.";
+  return "";
+}
+function startGame(e){
+  e.preventDefault();
+  const target=Number($("target").value), deuce=$("deuce").value==="true", useMax=$("useMax").checked, max=Number($("maxScore").value);
+  const err=validateRules(target,deuce,useMax,max);$("setupError").textContent=err;if(err)return;
+  const changeScore=Number($("changeScore").value);
+  if(!Number.isInteger(changeScore)||changeScore<1){$("setupError").textContent="코트 체인지 기준 점수는 1 이상의 정수여야 합니다.";return}
+  const fs=$("firstServer").value, ft=fs[0], fid=fs[1];
+  const fr=$("firstReceiver").value, rt=fr[0], rid=fr[1];
+  // 0:0 시작 시 실제 서비스 코트는 오른쪽(R)이다.
+  // 선택한 첫 서버와 첫 리시버를 서로 대각선에 보이도록 각각 동일한
+  // 논리 서비스 코트(R)에 배치한다. 코트 UI는 위쪽 팀의 좌우를 반전해
+  // 그리므로 화면에서는 두 선수가 정확히 대각선 맞은편에 나타난다.
+  const initialPos=(selectedId)=>{
+    const mate=selectedId==="1"?"2":"1";
+    return {L:mate,R:selectedId};
+  };
+  const defaultPos={L:"2",R:"1"};
+  state={changeScore,courtChanged:false,classInfo:{date:$("classDate").value,period:$("classPeriod").value},teams:{
+    A:{name:$("aTeam").value.trim()||"A팀",players:{"1":$("a1").value.trim()||"A1","2":$("a2").value.trim()||"A2"},score:0,pos:ft==="A"?initialPos(fid):rt==="A"?initialPos(rid):clone(defaultPos)},
+    B:{name:$("bTeam").value.trim()||"B팀",players:{"1":$("b1").value.trim()||"B1","2":$("b2").value.trim()||"B2"},score:0,pos:ft==="B"?initialPos(fid):rt==="B"?initialPos(rid):clone(defaultPos)}
+  },servingTeam:ft,server:fid,serviceSide:"R",rules:{target,deuce,max:deuce&&useMax?max:null},finished:false,winner:null};
+  history=[]; updateServiceState();saveGame();render();
+}
+function goToSetup(askConfirm=true){
+  if(askConfirm && !confirm("현재 경기를 종료하고 처음 설정 화면으로 돌아갈까요?"))return;
+  state=null;
+  history=[];
+  try{localStorage.removeItem(STORAGE)}catch(e){}
+  $("winner").classList.add("hidden");
+  $("board").classList.add("hidden");
+  $("setup").classList.remove("hidden");
+  if($("settingsDialog").open)$("settingsDialog").close();
+  window.scrollTo({top:0,left:0,behavior:"auto"});
+}
+function resetGame(){
+  goToSetup(true);
+}
+function openSettings(){
+  [["sATeam",state.teams.A.name],["sBTeam",state.teams.B.name],["sA1",state.teams.A.players["1"]],["sA2",state.teams.A.players["2"]],["sB1",state.teams.B.players["1"]],["sB2",state.teams.B.players["2"]],["sChangeScore",state.changeScore??11],["sTarget",state.rules.target],["sMax",state.rules.max??state.rules.target+9]].forEach(([id,v])=>$(id).value=v);
+  $("sDeuce").value=String(state.rules.deuce);$("sUseMax").value=String(state.rules.max!==null);$("settingsError").textContent="";$("settingsDialog").showModal();
+}
+function saveSettings(e){
+  e.preventDefault();const target=Number($("sTarget").value),deuce=$("sDeuce").value==="true",useMax=$("sUseMax").value==="true",max=Number($("sMax").value);
+  const err=validateRules(target,deuce,useMax,max);$("settingsError").textContent=err;if(err)return;
+  const changeScore=Number($("sChangeScore").value);
+  if(!Number.isInteger(changeScore)||changeScore<1){$("settingsError").textContent="코트 체인지 기준 점수는 1 이상의 정수여야 합니다.";return}
+  snapshot();state.changeScore=changeScore;state.teams.A.name=$("sATeam").value.trim()||"A팀";state.teams.B.name=$("sBTeam").value.trim()||"B팀";
+  state.teams.A.players["1"]=$("sA1").value.trim()||"A1";state.teams.A.players["2"]=$("sA2").value.trim()||"A2";state.teams.B.players["1"]=$("sB1").value.trim()||"B1";state.teams.B.players["2"]=$("sB2").value.trim()||"B2";
+  state.rules={target,deuce,max:deuce&&useMax?max:null};checkWinner();saveGame();$("settingsDialog").close();render();
+}
+["aTeam","bTeam","a1","a2","b1","b2"].forEach(id=>$(id).addEventListener("input",refreshServerOptions));
+$("firstServer").addEventListener("change",refreshServerOptions);
+document.querySelectorAll("[data-target]").forEach(b=>b.addEventListener("click",()=>{$("target").value=b.dataset.target}));
+$("deuce").addEventListener("change",()=>{const on=$("deuce").value==="true";$("useMax").disabled=!on;$("maxScore").disabled=!on||!$("useMax").checked});
+$("useMax").addEventListener("change",()=>{$("maxScore").disabled=!$("useMax").checked});
+$("setupForm").addEventListener("submit",startGame);
+document.querySelectorAll("[data-point]").forEach(b=>b.addEventListener("click",()=>awardPoint(b.dataset.point)));
+document.querySelectorAll("[data-minus]").forEach(b=>b.addEventListener("click",()=>minusTeam(b.dataset.minus)));
+$("courtChangeBtn").addEventListener("click",()=>{
+  if(!state||state.finished||Math.max(teamScore("A"),teamScore("B"))<(state.changeScore??11))return;
+  snapshot();state.courtChanged=!state.courtChanged;saveGame();render();
+});
+$("undoBtn").addEventListener("click",undo);$("winUndo").addEventListener("click",undo);
+$("resetBtn").addEventListener("click",resetGame);
+$("cancelGameBtn").addEventListener("click",(e)=>{
+  e.preventDefault();
+  e.stopPropagation();
+  goToSetup(false);
+});
+$("winReset").addEventListener("click",()=>goToSetup(false));
+$("settingsBtn").addEventListener("click",openSettings);$("cancelSettings").addEventListener("click",()=>$("settingsDialog").close());$("settingsForm").addEventListener("submit",saveSettings);
+const today=new Date(); const localToday=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+$("classDate").value=localToday;
+refreshServerOptions();
+if(loadGame()){updateServiceState();render()}
+</script>
+</body>
+</html>
